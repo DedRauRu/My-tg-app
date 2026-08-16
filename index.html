@@ -490,7 +490,7 @@
             measurementId: "G-3JKFV55MW0"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const db = firebase.firestore(); // ГЛОБАЛЬНАЯ db
     </script>
     
     <script>
@@ -1270,58 +1270,52 @@
                 }
             }
 
-            async function getLeaderboard() {
-                if (!db) return [];
+            async function showLeaderboard() {
+                closeAllModals();
+                openModal(leaderboardModal);
+                leaderboardContainer.innerHTML = '<p style="text-align:center;opacity:.7;">Загрузка...</p>';
                 
-                const now = Date.now();
-                if (leaderboardCache && (now - leaderboardCacheTime < 60000)) {
-                    return leaderboardCache;
+                if (!db) {
+                    leaderboardContainer.innerHTML = '<p style="text-align:center;opacity:.7;">Нет соединения</p>';
+                    return;
                 }
                 
                 try {
                     const snapshot = await db.collection('game_stats').orderBy('wins', 'desc').limit(10).get();
                     const leaders = [];
                     snapshot.forEach(doc => leaders.push({ telegramId: doc.id, ...doc.data() }));
-                    leaderboardCache = leaders;
-                    leaderboardCacheTime = now;
-                    return leaders;
-                } catch (e) { return leaderboardCache || []; }
-            }
-
-            async function showLeaderboard() {
-                closeAllModals();
-                openModal(leaderboardModal);
-                leaderboardContainer.innerHTML = '<p style="text-align:center;opacity:.7;">Загрузка...</p>';
-                
-                const leaders = await getLeaderboard();
-                let html = '';
-                
-                if (leaders.length === 0) {
-                    html = '<div style="display:flex;flex-direction:column;gap:8px;">';
-                    const myRole = getRoleLabel(telegramId);
-                    html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}${myRole ? ' ' + myRole : ''}</span><span class="stat-value">${totalWins()} ${t('wins')}</span></div>`;
-                    for (let i = 1; i < 10; i++) {
-                        html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
-                    }
-                    html += '</div>';
-                } else {
-                    html = '<div style="display:flex;flex-direction:column;gap:8px;">';
-                    for (let i = 0; i < 10; i++) {
-                        if (i < leaders.length) {
-                            const player = leaders[i];
-                            const userDoc = await db.collection('users').doc(player.telegramId).get();
-                            const name = userDoc.exists ? userDoc.data().firstName : 'Игрок';
-                            const playerRole = getRoleLabel(player.telegramId);
-                            const roleBadge = playerRole ? ' ' + playerRole : '';
-                            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                            html += `<div class="stat-row"><span>${medal} ${name}${roleBadge}</span><span class="stat-value">${player.wins || 0} ${t('wins')}</span></div>`;
-                        } else {
+                    
+                    let html = '';
+                    if (leaders.length === 0) {
+                        html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                        const myRole = getRoleLabel(telegramId);
+                        html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}${myRole ? ' ' + myRole : ''}</span><span class="stat-value">${totalWins()} ${t('wins')}</span></div>`;
+                        for (let i = 1; i < 10; i++) {
                             html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
                         }
+                        html += '</div>';
+                    } else {
+                        html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                        for (let i = 0; i < 10; i++) {
+                            if (i < leaders.length) {
+                                const player = leaders[i];
+                                const userDoc = await db.collection('users').doc(player.telegramId).get();
+                                const name = userDoc.exists ? userDoc.data().firstName : 'Игрок';
+                                const playerRole = getRoleLabel(player.telegramId);
+                                const roleBadge = playerRole ? ' ' + playerRole : '';
+                                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                                html += `<div class="stat-row"><span>${medal} ${name}${roleBadge}</span><span class="stat-value">${player.wins || 0} ${t('wins')}</span></div>`;
+                            } else {
+                                html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
+                            }
+                        }
+                        html += '</div>';
                     }
-                    html += '</div>';
+                    leaderboardContainer.innerHTML = html;
+                } catch (e) {
+                    console.log('Firebase error:', e);
+                    leaderboardContainer.innerHTML = '<p style="text-align:center;opacity:.7;">Ошибка загрузки</p>';
                 }
-                leaderboardContainer.innerHTML = html;
             }
 
             async function sendFriendRequest(toTelegramId) {
