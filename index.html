@@ -7,117 +7,486 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root{--glass-bg:rgba(255,255,255,.08);--glass-border:rgba(255,255,255,.2);--glass-shadow:0 8px 32px rgba(0,0,0,.15);--text:#fff;--accent:#ffd700;--cell-bg:rgba(255,255,255,.15);--cell-hover:rgba(255,255,255,.28);--cell-open:rgba(255,255,255,.06);--cell-border:rgba(255,255,255,.18);--cell-size:38px}
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Segoe UI',Inter,system-ui,-apple-system,sans-serif;min-height:100vh;color:var(--text);background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);background-size:cover;background-attachment:fixed;display:flex;flex-direction:column;align-items:center;padding:16px;transition:background .6s ease;overflow-x:hidden;position:relative}
+        *{box-sizing:border-box;margin:0;padding:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+        *::-webkit-scrollbar{width:4px;height:4px}
+        *::-webkit-scrollbar-track{background:transparent;border-radius:4px}
+        *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px;transition:background .3s}
+        *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3)}
+        body{font-family:'Segoe UI',Inter,system-ui,-apple-system,sans-serif;min-height:100vh;color:var(--text);background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);background-size:cover;background-attachment:fixed;display:flex;flex-direction:column;align-items:center;padding:16px;padding-bottom:90px;transition:background .6s ease;overflow-x:hidden;position:relative}
         .glass{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);border-radius:16px}
         header{width:100%;max-width:1000px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 20px;gap:12px;z-index:10}
-        .logo{font-size:1.8rem;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#fff,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 10px rgba(0,0,0,.3);cursor:default;user-select:none}
+        .logo{font-size:1.8rem;font-weight:800;letter-spacing:2px;color:#ffd700;text-shadow:0 2px 10px rgba(255,215,0,.3);cursor:default;user-select:none}
         .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .balance,.level-info,.profile-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:30px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);font-weight:700;font-size:1rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;cursor:pointer}
-        .balance .coin{font-size:1.3rem;filter:drop-shadow(0 0 6px rgba(255,215,0,.8))}.level-info .xp{font-size:.9rem;color:#ffd700}.profile-btn .avatar{font-size:1.5rem}
+        .balance .coin{font-size:1.3rem;filter:drop-shadow(0 0 6px rgba(255,215,0,.8))}
+        .level-info .xp{font-size:.9rem;color:#ffd700}
+        .profile-btn .avatar{font-size:1.5rem}
         .btn{padding:10px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .2s ease;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);letter-spacing:.5px;white-space:nowrap}
-        .btn:hover{background:rgba(255,255,255,.25);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2)}.btn:active{transform:translateY(0);box-shadow:none}.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .btn:hover{background:rgba(255,255,255,.25);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2)}
+        .btn:active{transform:translateY(0);box-shadow:none}
+        .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
         main{width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 0;flex:1}
-        .game-info{display:flex;gap:20px;padding:12px 24px;font-weight:700;font-size:1.1rem;align-items:center}.info-item{display:flex;align-items:center;gap:8px}
-        .board-wrapper{padding:12px;display:flex;justify-content:center;align-items:center;max-width:95vw;position:relative}.board{display:grid;gap:2px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+        .game-info{display:flex;gap:20px;padding:12px 24px;font-weight:700;font-size:1.1rem;align-items:center}
+        .info-item{display:flex;align-items:center;gap:8px}
+        .board-wrapper{padding:12px;display:flex;justify-content:center;align-items:center;max-width:95vw;position:relative}
+        .board{display:grid;gap:2px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
         .cell{width:var(--cell-size);height:var(--cell-size);display:flex;align-items:center;justify-content:center;background:var(--cell-bg);border:1px solid var(--cell-border);border-radius:6px;cursor:pointer;font-weight:800;font-size:calc(var(--cell-size)*.5);color:#fff;transition:background .15s ease,transform .1s ease,box-shadow .2s ease;animation:fadeIn .25s ease}
-        .cell:hover{background:var(--cell-hover);transform:scale(1.04);box-shadow:0 0 12px rgba(255,255,255,.2)}.cell.revealed{background:var(--cell-open);cursor:default;animation:openPop .25s ease}.cell.revealed:hover{background:var(--cell-open);transform:none;box-shadow:none}.cell.mine{background:rgba(255,60,60,.3)}.cell.exploded{animation:explode .6s ease;background:rgba(255,0,0,.7)}.cell.flagged{background:rgba(255,215,0,.2)}.num-1{color:#4fc3f7}.num-2{color:#81c784}.num-3{color:#ff8a65}.num-4{color:#ba68c8}.num-5{color:#f06292}.num-6{color:#4dd0e1}.num-7{color:#fff176}.num-8{color:#e0e0e0}
-        .hint{margin-top:16px;padding:12px 20px;font-size:.95rem;color:#fff;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;text-align:center;max-width:600px}.controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}.modal-overlay.active{display:flex}
+        .cell:hover{background:var(--cell-hover);transform:scale(1.04);box-shadow:0 0 12px rgba(255,255,255,.2)}
+        .cell.revealed{background:var(--cell-open);cursor:default;animation:openPop .25s ease}
+        .cell.revealed:hover{background:var(--cell-open);transform:none;box-shadow:none}
+        .cell.mine{background:rgba(255,60,60,.3)}
+        .cell.exploded{animation:explode .6s ease;background:rgba(255,0,0,.7)}
+        .cell.flagged{background:rgba(255,215,0,.2)}
+        .num-1{color:#4fc3f7}.num-2{color:#81c784}.num-3{color:#ff8a65}.num-4{color:#ba68c8}.num-5{color:#f06292}.num-6{color:#4dd0e1}.num-7{color:#fff176}.num-8{color:#e0e0e0}
+        .hint{margin-top:16px;padding:12px 20px;font-size:.95rem;color:#fff;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px;text-align:center;max-width:600px}
+        .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+        .modal-overlay.active{display:flex}
         .modal-content{background:rgba(255,255,255,.12);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.3);box-shadow:0 20px 60px rgba(0,0,0,.4);border-radius:20px;padding:24px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;animation:modalIn .3s ease}
-        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.modal-title{font-size:1.4rem;font-weight:700}.close-btn{background:none;border:none;color:#fff;font-size:1.8rem;cursor:pointer;line-height:1;padding:0 4px;transition:transform .2s}.close-btn:hover{transform:rotate(90deg)}
-        .instruction-text{line-height:1.7;font-size:1rem}.difficulty-options{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}.difficulty-btn{padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:1.2rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}.difficulty-btn.selected{background:rgba(255,215,0,.4);border-color:#ffd700;box-shadow:0 0 16px rgba(255,215,0,.4)}
-        .size-form{display:flex;flex-direction:column;gap:14px}.size-inputs{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.size-inputs label{display:flex;align-items:center;gap:6px;font-weight:600}.size-inputs input{width:70px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1rem;text-align:center;outline:none}.size-inputs input:focus{border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.3)}input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}.error-msg{color:#ff8a80;font-weight:600;min-height:24px}
-        .shop-tabs{display:flex;gap:6px;margin-bottom:16px}.shop-tab{padding:10px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-weight:600;transition:all .2s}.shop-tab.active{background:rgba(255,215,0,.35);border-color:#ffd700}.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}.shop-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .25s}.shop-card:hover{background:rgba(255,255,255,.15);transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.2)}.shop-preview{width:60px;height:60px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:2rem;border:1px solid rgba(255,255,255,.3)}.shop-name{font-weight:700;font-size:.95rem;text-align:center}.shop-price{font-size:.9rem;font-weight:600;color:#ffe082}.shop-btn{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;font-weight:700;cursor:pointer;transition:all .2s}.shop-btn:hover{background:rgba(255,255,255,.3)}.shop-btn.unavailable{background:rgba(128,128,128,.3);color:#aaa;cursor:not-allowed}
-        .qty-selector{display:flex;align-items:center;gap:8px}.qty-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:all .2s}.qty-btn:hover{background:rgba(255,255,255,.4)}.qty-input{width:40px;text-align:center;background:transparent;border:none;color:#fff;font-weight:700;font-size:1rem;outline:none}
-        .booster-icon{padding:5px 10px;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;border:1px solid transparent}.booster-icon.active{background:rgba(0,255,0,.3);border-color:#0f0;box-shadow:0 0 10px rgba(0,255,0,.5)}.booster-count{font-size:.9rem}
-        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);padding:14px 24px;border-radius:12px;background:rgba(0,0,0,.8);color:#fff;font-weight:700;z-index:2000;transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;text-align:center;max-width:90vw}.toast.show{transform:translateX(-50%) translateY(0);opacity:1}.toast.success{background:rgba(46,125,50,.9)}.toast.error{background:rgba(198,40,40,.9)}
-        @keyframes fadeIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}@keyframes openPop{0%{transform:scale(.7);opacity:.4}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}@keyframes explode{0%{transform:scale(1)}30%{transform:scale(1.4);background:rgba(255,0,0,.8)}60%{transform:scale(.8);background:rgba(255,100,0,.6)}100%{transform:scale(1);background:rgba(255,0,0,.7)}}@keyframes modalIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-        .cheat-btn{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-weight:800;border:1px solid #ffd700;box-shadow:0 0 12px rgba(255,215,0,.6)}.cheat-btn:hover{background:linear-gradient(135deg,#ffed4a,#ffa500);box-shadow:0 0 20px rgba(255,215,0,.8)}.cheat-options{display:flex;flex-direction:column;gap:12px}.cheat-action{font-size:1.1rem;padding:14px;text-align:center;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:12px;cursor:pointer;transition:all .2s;color:#fff;font-weight:700}.cheat-action:hover{background:rgba(255,255,255,.35);transform:scale(1.02)}.cheat-action:active{transform:scale(.98)}.cell.show-mine{background:rgba(255,0,0,.4)!important;box-shadow:inset 0 0 10px rgba(255,0,0,.8);border-color:rgba(255,0,0,.8)}
-        .boom-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;display:flex;align-items:center;justify-content:center;animation:boomFlash .8s ease}.boom-report{position:relative;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.95);color:#333;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;box-shadow:0 0 50px rgba(255,0,0,.5);animation:reportIn 1s ease}.boom-ring{position:absolute;top:0;left:0;pointer-events:none}.boom-ring circle{stroke-dasharray:880;stroke-dashoffset:0;animation:ringCountdown 15s linear forwards}@keyframes ringCountdown{from{stroke-dashoffset:0}to{stroke-dashoffset:880}}.boom-report h2{margin-bottom:12px;font-size:1.8rem}.boom-report p{font-size:1rem;line-height:1.4}@keyframes boomFlash{0%{opacity:0;background:rgba(255,255,255,.2)}30%{opacity:1;background:rgba(255,100,0,.6)}60%{background:rgba(255,0,0,.8)}100%{opacity:1;background:rgba(0,0,0,.8)}}@keyframes reportIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
-        .exit-theme-btn{position:fixed;top:10px;left:10px;z-index:2000;background:rgba(0,0,0,.7);color:#fff;border:2px solid #fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem;font-weight:bold;transition:all .2s}.exit-theme-btn:hover{background:rgba(255,255,255,.2);transform:scale(1.1)}
-        .leaves-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;overflow:hidden}.leaf{position:absolute;top:-10%;animation:leafFall linear infinite}@keyframes leafFall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
-        .sound-toggle{display:flex;align-items:center;gap:5px;cursor:pointer}footer{margin-top:auto;padding:20px;font-size:.9rem;opacity:.7}
-        .modal-content::-webkit-scrollbar{width:8px}.modal-content::-webkit-scrollbar-track{background:rgba(255,255,255,.1);border-radius:4px}.modal-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:4px}
-        .start-menu-modal .modal-content{max-width:400px;text-align:center}.start-menu-modal .btn{margin:8px auto;width:100%;font-size:1.2rem}
-        .stats-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:15px;margin-bottom:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .2s}.stats-card:hover{transform:translateY(-2px)}.stats-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700}.stats-stars{color:#ffd700}.stats-details{display:flex;justify-content:space-between;font-size:.9rem;opacity:.9}.stats-winrate{margin-top:8px;display:flex;align-items:center;gap:8px}.progress-bar{flex:1;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden}.progress-fill{height:100%;background:#4caf50;border-radius:4px;transition:width .3s ease}.recent-games{margin-top:20px}.recent-games h4{margin-bottom:10px}.recent-game-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,.05);border-radius:8px;margin-bottom:5px;font-size:.9rem}
-        .nickname-input{width:100%;padding:12px 18px;border-radius:14px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:1.1rem;outline:none;transition:all .3s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);letter-spacing:.5px}.nickname-input:focus{border-color:#ffd700;background:rgba(255,255,255,.2);box-shadow:0 0 20px rgba(255,215,0,.3)}.nickname-input::placeholder{color:rgba(255,255,255,.5)}
-        body.pvp-player1{background:linear-gradient(135deg,#ff5555,#cc0000)!important}body.pvp-player2{background:linear-gradient(135deg,#5555ff,#0000cc)!important}.pvp-indicator{font-weight:bold;padding:5px 15px;border-radius:20px;background:rgba(255,255,255,.2)}
-        @media(max-width:600px){.logo{font-size:1.3rem}.btn{padding:8px 12px;font-size:.85rem}.game-info{gap:10px;padding:10px 14px;font-size:.95rem}.shop-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.modal-content{padding:16px}.hint{font-size:.85rem;padding:10px 14px}.boom-report{width:260px;height:260px;padding:20px}.boom-ring circle{stroke-dasharray:754}@keyframes ringCountdown{from{stroke-dashoffset:0}to{stroke-dashoffset:754}}}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+        .modal-title{font-size:1.4rem;font-weight:700}
+        .close-btn{background:none;border:none;color:#fff;font-size:1.8rem;cursor:pointer;line-height:1;padding:0 4px;transition:transform .2s}
+        .close-btn:hover{transform:rotate(90deg)}
+        .difficulty-options{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+        .difficulty-btn{padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:1.2rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+        .difficulty-btn.selected{background:rgba(255,215,0,.4);border-color:#ffd700;box-shadow:0 0 16px rgba(255,215,0,.4)}
+        .size-form{display:flex;flex-direction:column;gap:14px}
+        .size-inputs{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+        .size-inputs label{display:flex;align-items:center;gap:6px;font-weight:600}
+        .size-inputs input{width:70px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1rem;text-align:center;outline:none}
+        .size-inputs input:focus{border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.3)}
+        input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+        input[type=number]{-moz-appearance:textfield}
+        .error-msg{color:#ff8a80;font-weight:600;min-height:24px}
+        .shop-tabs{display:flex;gap:6px;margin-bottom:16px}
+        .shop-tab{padding:10px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-weight:600;transition:all .2s}
+        .shop-tab.active{background:rgba(255,215,0,.35);border-color:#ffd700}
+        .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+        .shop-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .25s}
+        .shop-card:hover{background:rgba(255,255,255,.15);transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.2)}
+        .shop-preview{width:60px;height:60px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:2rem;border:1px solid rgba(255,255,255,.3)}
+        .shop-name{font-weight:700;font-size:.95rem;text-align:center}
+        .shop-price{font-size:.9rem;font-weight:600;color:#ffe082}
+        .shop-btn{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;font-weight:700;cursor:pointer;transition:all .2s}
+        .shop-btn:hover{background:rgba(255,255,255,.3)}
+        .shop-btn.unavailable{background:rgba(128,128,128,.3);color:#aaa;cursor:not-allowed}
+        .qty-selector{display:flex;align-items:center;gap:8px}
+        .qty-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:all .2s}
+        .qty-btn:hover{background:rgba(255,255,255,.4)}
+        .qty-input{width:40px;text-align:center;background:transparent;border:none;color:#fff;font-weight:700;font-size:1rem;outline:none}
+        .booster-icon{padding:5px 10px;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;border:1px solid transparent}
+        .booster-icon.active{background:rgba(0,255,0,.3);border-color:#0f0;box-shadow:0 0 10px rgba(0,255,0,.5)}
+        .booster-count{font-size:.9rem}
+        .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(80px);padding:14px 24px;border-radius:12px;background:rgba(0,0,0,.8);color:#fff;font-weight:700;z-index:2000;transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;text-align:center;max-width:90vw}
+        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+        .toast.success{background:rgba(46,125,50,.9)}
+        .toast.error{background:rgba(198,40,40,.9)}
+        @keyframes fadeIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+        @keyframes openPop{0%{transform:scale(.7);opacity:.4}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+        @keyframes explode{0%{transform:scale(1)}30%{transform:scale(1.4);background:rgba(255,0,0,.8)}60%{transform:scale(.8);background:rgba(255,100,0,.6)}100%{transform:scale(1);background:rgba(255,0,0,.7)}}
+        @keyframes modalIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+        .cheat-btn{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-weight:800;border:1px solid #ffd700;box-shadow:0 0 12px rgba(255,215,0,.6)}
+        .exit-theme-btn{position:fixed;top:10px;left:10px;z-index:2000;background:rgba(0,0,0,.7);color:#fff;border:2px solid #fff;border-radius:50%;width:40px;height:40px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem;font-weight:bold;transition:all .2s}
+        .leaves-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;overflow:hidden}
+        .leaf{position:absolute;top:-10%;animation:leafFall linear infinite}
+        @keyframes leafFall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,32,39,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-around;align-items:center;padding:10px 0;z-index:500}
+        .bottom-nav .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 16px;border-radius:12px;transition:all .3s;color:#ccc;font-size:.75rem}
+        .bottom-nav .nav-item.active{color:#ffd700;background:rgba(255,215,0,.15)}
+        .bottom-nav .nav-item .nav-icon{font-size:1.6rem}
+        .toggle-switch{position:relative;display:inline-block;width:50px;height:26px}
+        .toggle-switch input{opacity:0;width:0;height:0}
+        .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.2);border-radius:26px;transition:.3s}
+        .toggle-slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+        .toggle-switch input:checked + .toggle-slider{background:#4caf50}
+        .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
+        .lang-select{width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+        .lang-select option{background:#1a2a35;color:#fff}
+        .profile-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+        .profile-avatar-big{width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:2.5rem;border:2px solid #ffd700}
+        .profile-info h3{font-size:1.3rem;margin-bottom:4px}
+        .profile-info p{opacity:.8;font-size:.9rem}
+        .stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+        .stat-label{opacity:.7}
+        .stat-value{font-weight:700;color:#ffd700}
+        .achievement-item{display:flex;align-items:center;gap:12px;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:8px}
+        .achievement-icon{font-size:1.8rem}
+        .achievement-name{font-weight:600;font-size:.95rem}
+        .achievement-progress{font-size:.8rem;opacity:.7}
+        .dev-badge{display:inline-block;padding:4px 10px;background:rgba(255,165,0,.3);border:1px solid #ffa500;border-radius:12px;font-size:.7rem;font-weight:700;color:#ffa500;margin-left:8px;vertical-align:middle}
+        .booster-info-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);cursor:pointer;font-size:.8rem;color:#fff;margin-left:6px;transition:all .2s}
+        .booster-info-icon:hover{background:rgba(255,255,255,.4)}
+        .profile-avatar-big img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+        .settings-group{margin-bottom:20px;padding:15px;background:rgba(255,255,255,.05);border-radius:12px}
+        .settings-group h3{margin-bottom:10px;font-size:1.1rem}
+        .modes-grid{display:grid;grid-template-columns:1fr;gap:10px}
+        .mode-card{padding:16px;background:rgba(255,255,255,.08);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+        .mode-card:hover{background:rgba(255,255,255,.15)}
+        .mode-card.disabled{opacity:.5;cursor:not-allowed}
+        .mode-card .mode-icon{font-size:2rem;margin-bottom:8px}
+        .mode-card .mode-name{font-weight:700}
+        .mode-card .mode-desc{font-size:.85rem;opacity:.7;margin-top:4px}
+        .promo-input-wrapper{position:relative;width:100%}
+        .promo-input-wrapper .promo-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.2rem;pointer-events:none;opacity:.7}
+        .promo-input{width:100%;padding:14px 16px 14px 44px;border-radius:14px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:1rem;outline:none;transition:all .3s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);letter-spacing:1px;font-weight:600}
+        .promo-input:focus{border-color:#ffd700;background:rgba(255,255,255,.12);box-shadow:0 0 20px rgba(255,215,0,.25)}
+        .promo-input::placeholder{color:rgba(255,255,255,.4);letter-spacing:0;font-weight:400}
+        .nickname-input{width:100%;padding:12px 18px;border-radius:14px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:1.1rem;outline:none;transition:all .3s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);letter-spacing:.5px}
+        .nickname-input:focus{border-color:#ffd700;background:rgba(255,255,255,.2);box-shadow:0 0 20px rgba(255,215,0,.3)}
+        .nickname-input::placeholder{color:rgba(255,255,255,.5)}
+        footer{margin-top:auto;padding:20px;font-size:.9rem;opacity:.7}
+        @media(max-width:600px){.logo{font-size:1.3rem}.btn{padding:8px 12px;font-size:.85rem}.game-info{gap:10px;padding:10px 14px;font-size:.95rem}.shop-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.modal-content{padding:16px}.hint{font-size:.85rem;padding:10px 14px}.bottom-nav .nav-item{font-size:.6rem;padding:6px 10px}.bottom-nav .nav-item .nav-icon{font-size:1.4rem}}
     </style>
 </head>
 <body>
-    <!-- ВЕСЬ HTML БЕЗ ИЗМЕНЕНИЙ -->
     <div id="leavesContainer" class="leaves-container" style="display:none;"></div>
-    <div class="modal-overlay active start-menu-modal" id="startMenuModal">
-        <div class="modal-content">
-            <div class="modal-header"><div class="modal-title">INSIK GAME</div><button class="close-btn" data-close>&times;</button></div>
-            <button class="btn" id="singlePlayerBtn">Одиночная игра</button>
-            <button class="btn" id="multiplayerBtn">Игра друг против друга</button>
-            <button class="btn" id="settingsBtn">Настройки</button>
-            <button class="btn" id="aboutBtn">О разработчике</button>
-            <button class="btn" id="profileMenuBtn">Профиль</button>
-        </div>
-    </div>
-    <div class="modal-overlay" id="pvpModal">
-        <div class="modal-content">
-            <div class="modal-header"><div class="modal-title">Игра друг против друга</div><button class="close-btn" data-close>&times;</button></div>
-            <p>В этом режиме опыт (XP) не накапливается.</p>
-            <button class="btn" id="pvpOkBtn">ОК</button>
-        </div>
-    </div>
+    
+    <!-- ШАПКА -->
     <header class="glass">
-        <div class="logo">INSIK GAME</div>
+        <div class="logo">INSIK GAMES</div>
         <div class="header-right">
-            <div class="level-info" id="levelInfo" title="Уровень"><span>🏆</span><span id="levelDisplay">1</span><span class="xp" id="xpDisplay">0 XP</span></div>
-            <div class="balance" title="Баланс"><span class="coin">🪙</span><span id="balanceAmount">0</span></div>
-            <div class="pvp-indicator" id="pvpIndicator" style="display:none;">Ход: Игрок 1</div>
-            <div class="sound-toggle" id="soundToggle" title="Звук">🔊</div>
-            <button class="btn profile-btn" id="profileBtn"><span class="avatar" id="profileAvatar">😊</span><span id="profileName">Профиль</span></button>
-            <button class="btn header-btn" id="menuBtn">Меню</button>
-            <button class="btn header-btn" id="instructionBtn">Инструкция</button>
-            <button class="btn header-btn" id="shopBtn">Магазин</button>
-            <button class="btn header-btn" id="statsBtn">Статистика</button>
-            <button class="btn lang-btn" id="langToggle">EN</button>
+            <div class="level-info" id="levelInfo" title="Уровень">
+                <span>🏆</span>
+                <span id="levelDisplay">1</span>
+                <span class="xp" id="xpDisplay">0 XP</span>
+            </div>
+            <div class="balance" title="Баланс">
+                <span class="coin">🪙</span>
+                <span id="balanceAmount">0</span>
+            </div>
+            <button class="btn profile-btn" id="profileBtn">
+                <span class="avatar" id="profileAvatar">😊</span>
+                <span id="profileName">Профиль</span>
+            </button>
             <button class="btn cheat-btn" id="cheatBtn" style="display:none;">Чит</button>
         </div>
     </header>
-    <div id="exitThemeBtn" class="exit-theme-btn" style="display:none;">✕</div>
+    
+    <div id="exitThemeBtn" class="exit-theme-btn">✕</div>
+    
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main>
         <div class="game-info glass">
-            <div class="info-item"><span>💣</span><span id="mineCounter">0</span></div>
-            <div class="info-item"><span>⏱️</span><span id="timerDisplay">00:00</span></div>
+            <div class="info-item">
+                <span>💣</span>
+                <span id="mineCounter">0</span>
+            </div>
+            <div class="info-item">
+                <span>⏱️</span>
+                <span id="timerDisplay">00:00</span>
+            </div>
             <div class="info-item">
                 <span class="booster-icon" data-booster="safe_cell" id="booster-safe">🛡️ <span class="booster-count">0</span></span>
                 <span class="booster-icon" data-booster="freeze_time" id="booster-freeze">❄️ <span class="booster-count">0</span></span>
                 <span class="booster-icon" data-booster="hint_zone" id="booster-hint">💡 <span class="booster-count">0</span></span>
             </div>
         </div>
-        <div class="board-wrapper glass" id="boardWrapper"><div id="board" class="board"></div></div>
+        
+        <div class="board-wrapper glass" id="boardWrapper">
+            <div id="board" class="board"></div>
+        </div>
         <div id="konamiProgress" class="konami-progress"></div>
+        
         <div class="hint glass" id="hint"></div>
+        
         <div class="controls">
-            <button class="btn" id="difficultyBtn">Сложность</button>
-            <button class="btn" id="sizeBtn">Размер поля</button>
-            <button class="btn" id="restartBtn">Начать заново</button>
-            <button class="btn" id="continueBtn" style="display:none;">Продолжить</button>
+            <button class="btn" id="difficultyBtn" data-i18n="difficulty">Сложность</button>
+            <button class="btn" id="sizeBtn" data-i18n="size">Размер поля</button>
+            <button class="btn" id="restartBtn" data-i18n="restart">Начать заново</button>
+            <button class="btn" id="continueBtn" data-i18n="continueGame" style="display:none;">Продолжить</button>
+            <button class="btn" id="shopBtn" data-i18n="shop">Магазин</button>
         </div>
     </main>
-    <footer id="versionFooter">Версия 1.0.0</footer>
-
-    <!-- Все модальные окна -->
-    <div class="modal-overlay" id="instructionModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Как играть</div><button class="close-btn" data-close>&times;</button></div><div class="instruction-text" id="instructionBody"></div></div></div>
-    <div class="modal-overlay" id="difficultyModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Сложность</div><button class="close-btn" data-close>&times;</button></div><div class="difficulty-options" id="difficultyOptions"><button class="difficulty-btn" data-difficulty="1">★</button><button class="difficulty-btn" data-difficulty="2">★★</button><button class="difficulty-btn" data-difficulty="3">★★★</button><button class="difficulty-btn" data-difficulty="4">★★★★</button><button class="difficulty-btn" data-difficulty="5">★★★★★</button></div></div></div>
-    <div class="modal-overlay" id="sizeModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Размер поля</div><button class="close-btn" data-close>&times;</button></div><div class="size-form"><div class="size-inputs"><label><span>Ширина</span><input type="number" id="inputWidth" min="5" max="30" value="9"></label><label><span>Высота</span><input type="number" id="inputHeight" min="5" max="30" value="9"></label></div><div class="error-msg" id="sizeError"></div><button class="btn" id="applySize">Применить</button></div></div></div>
-    <div class="modal-overlay" id="shopModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Магазин</div><button class="close-btn" data-close>&times;</button></div><div class="shop-tabs"><button class="shop-tab active" data-tab="themes">Темы</button><button class="shop-tab" data-tab="skins">Скины мин</button><button class="shop-tab" data-tab="boosters">Бустеры</button></div><div class="shop-grid" id="shopItems"></div></div></div>
-    <div class="modal-overlay" id="statsModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Статистика</div><button class="close-btn" data-close>&times;</button></div><div id="statsContainer"></div></div></div>
-    <div class="modal-overlay" id="resultModal"><div class="modal-content"><div class="modal-header"><div class="modal-title" id="resultTitle"></div><button class="close-btn" data-close>&times;</button></div><div id="resultMessage" style="margin-bottom:16px;font-size:1.1rem;"></div><button class="btn" id="resultBtn">Новая игра</button></div></div>
-    <div class="modal-overlay" id="cheatModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Чит-панель</div><button class="close-btn" data-close>&times;</button></div><div class="cheat-options"><button class="btn cheat-action" id="highlightMinesBtn">Подсвечивать мины</button><button class="btn cheat-action" id="addCoinsBtn">Добавить 100000 монет</button><button class="btn cheat-action" id="resetGameBtn">Полный сброс</button><button class="btn cheat-action" id="autoWinBtn">Автопобеда</button><button class="btn cheat-action" id="boomBtn">Бах</button></div></div></div>
-    <div class="modal-overlay" id="settingsModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Настройки</div><button class="close-btn" data-close>&times;</button></div><div class="settings-form"><label>Язык / Language</label><button class="btn" id="settingsLangRu">Русский</button><button class="btn" id="settingsLangEn">English</button><br><br><label>Звук / Sound</label><button class="btn" id="settingsSoundToggle">Вкл/Выкл</button></div></div></div>
-    <div class="modal-overlay" id="aboutModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">О разработчике</div><button class="close-btn" data-close>&times;</button></div><p>В telegram — @inss_zeny <svg width="20" height="20" viewBox="0 0 24 24" fill="white" style="vertical-align:middle;"><path d="M9.04 15.51l-.38 5.34c.54 0 .77-.23 1.06-.5l2.54-2.44 5.27 3.87c.97.53 1.66.25 1.92-.9l3.48-16.36c.31-1.44-.52-2-1.46-1.65L1.58 9.9c-1.4.54-1.38 1.32-.24 1.67l5.25 1.64L18.6 5.4c.58-.38 1.1-.17.67.21L9.04 15.51z"/></svg></p></div></div>
-    <div class="modal-overlay" id="profileModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Профиль</div><button class="close-btn" data-close>&times;</button></div><div class="profile-form"><label for="nicknameInput">Никнейм:</label><input type="text" id="nicknameInput" class="nickname-input" placeholder="Введите ник" maxlength="20"><br><br><label>Аватарка:</label><div id="avatarOptions" style="display:flex;flex-wrap:wrap;gap:8px;"></div><button class="btn" id="saveProfileBtn">Сохранить</button></div></div></div>
+    
+    <footer id="versionFooter">Версия 1.1.0</footer>
+    
+    <!-- НИЖНЕЕ МЕНЮ -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-tab="game">
+            <span class="nav-icon">🎮</span>
+            <span data-i18n="game">Игра</span>
+        </div>
+        <div class="nav-item" data-tab="profile">
+            <span class="nav-icon">👤</span>
+            <span data-i18n="profile">Профиль</span>
+        </div>
+        <div class="nav-item" data-tab="settings">
+            <span class="nav-icon">⚙️</span>
+            <span data-i18n="settings">Настройки</span>
+        </div>
+        <div class="nav-item" data-tab="modes">
+            <span class="nav-icon">🎯</span>
+            <span data-i18n="modes">Режимы</span>
+        </div>
+        <div class="nav-item" data-tab="roulette">
+            <span class="nav-icon">🎰</span>
+            <span data-i18n="roulette">Рулетка</span>
+        </div>
+        <div class="nav-item" data-tab="friends">
+            <span class="nav-icon">👥</span>
+            <span data-i18n="friends">Друзья</span>
+        </div>
+    </div>
+    
+    <!-- Инструкция -->
+    <div class="modal-overlay" id="instructionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="instructionTitle">Как играть</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="instruction-text" id="instructionBody"></div>
+        </div>
+    </div>
+    
+    <!-- Сложность -->
+    <div class="modal-overlay" id="difficultyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="difficultyTitle">Сложность</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="difficulty-options" id="difficultyOptions">
+                <button class="difficulty-btn" data-difficulty="1">★</button>
+                <button class="difficulty-btn" data-difficulty="2">★★</button>
+                <button class="difficulty-btn" data-difficulty="3">★★★</button>
+                <button class="difficulty-btn" data-difficulty="4">★★★★</button>
+                <button class="difficulty-btn" data-difficulty="5">★★★★★</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Размер поля -->
+    <div class="modal-overlay" id="sizeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="fieldSizeTitle">Размер поля</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="size-form">
+                <div class="size-inputs">
+                    <label><span data-i18n="width">Ширина</span><input type="number" id="inputWidth" min="5" max="30" value="9"></label>
+                    <label><span data-i18n="height">Высота</span><input type="number" id="inputHeight" min="5" max="30" value="9"></label>
+                </div>
+                <div class="error-msg" id="sizeError"></div>
+                <button class="btn" id="applySize" data-i18n="apply">Применить</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Магазин -->
+    <div class="modal-overlay" id="shopModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="shop">Магазин</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="shop-tabs">
+                <button class="shop-tab active" data-tab="themes" data-i18n="themesTab">Темы</button>
+                <button class="shop-tab" data-tab="skins" data-i18n="skinsTab">Скины мин</button>
+                <button class="shop-tab" data-tab="boosters" data-i18n="boostersTab">Бустеры</button>
+            </div>
+            <div class="shop-grid" id="shopItems"></div>
+        </div>
+    </div>
+    
+    <!-- Результат -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="resultTitle"></div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div id="resultMessage" style="margin-bottom:16px;font-size:1.1rem;"></div>
+            <button class="btn" id="resultBtn" data-i18n="newGame">Новая игра</button>
+        </div>
+    </div>
+    
+    <!-- Чит-панель -->
+    <div class="modal-overlay" id="cheatModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="cheatTitle">Чит-панель</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="cheat-options">
+                <button class="btn cheat-action" id="highlightMinesBtn" data-i18n="highlightMines">Подсвечивать мины</button>
+                <button class="btn cheat-action" id="addCoinsBtn" data-i18n="addCoins">Добавить 100000 монет</button>
+                <button class="btn cheat-action" id="resetGameBtn" data-i18n="resetGame">Полный сброс</button>
+                <button class="btn cheat-action" id="autoWinBtn" data-i18n="autoWin">Автопобеда</button>
+                <button class="btn cheat-action" id="boomBtn" data-i18n="boom">Бах</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Настройки -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="settings">Настройки</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="settings-group">
+                <h3 data-i18n="language">Язык / Language</h3>
+                <select class="lang-select" id="langSelect">
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <h3 data-i18n="sound">Звук / Sound</h3>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="soundToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span id="soundLabel" style="margin-left:10px;" data-i18n="soundOn">Вкл</span>
+            </div>
+            <div class="settings-group">
+                <h3 data-i18n="promocode">Промокод</h3>
+                <div class="promo-input-wrapper">
+                    <span class="promo-icon">🎁</span>
+                    <input type="text" id="promoInput" class="promo-input" placeholder="Введите промокод" maxlength="20" autocomplete="off">
+                </div>
+                <button class="btn" id="applyPromoBtn" style="margin-top:10px;width:100%;" data-i18n="apply">Применить</button>
+            </div>
+            <div class="settings-group">
+                <h3 data-i18n="about">О разработчике</h3>
+                <p style="display:flex;align-items:center;gap:8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M9.04 15.51l-.38 5.34c.54 0 .77-.23 1.06-.5l2.54-2.44 5.27 3.87c.97.53 1.66.25 1.92-.9l3.48-16.36c.31-1.44-.52-2-1.46-1.65L1.58 9.9c-1.4.54-1.38 1.32-.24 1.67l5.25 1.64L18.6 5.4c.58-.38 1.1-.17.67.21L9.04 15.51z"/>
+                    </svg>
+                    <a href="https://t.me/INSIK_games" target="_blank" style="color:#4fc3f7;text-decoration:none;">Telegram - @INSIK_games</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Профиль -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="profile">Профиль</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="profile-header">
+                <div class="profile-avatar-big" id="profileAvatarBig">😊</div>
+                <div class="profile-info">
+                    <h3 id="profileNameBig">Гость</h3>
+                    <p id="profileUsername">@username</p>
+                    <p>🏆 Уровень: <span id="profileLevel">1</span></p>
+                </div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="wins">Побед</span>
+                <span class="stat-value" id="profileWins">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="losses">Поражений</span>
+                <span class="stat-value" id="profileLosses">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label" data-i18n="winRate">Коэффициент побед</span>
+                <span class="stat-value" id="profileWinRate">0%</span>
+            </div>
+            <h3 style="margin:20px 0 10px;" data-i18n="achievements">Достижения</h3>
+            <div id="achievementsList"></div>
+        </div>
+    </div>
+    
+    <!-- Режимы -->
+    <div class="modal-overlay" id="modesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="modes">Режимы</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div class="modes-grid">
+                <div class="mode-card" id="singlePlayerModeBtn">
+                    <div class="mode-icon">🎮</div>
+                    <div class="mode-name" data-i18n="singlePlayer">Одиночная игра</div>
+                    <div class="mode-desc" data-i18n="singlePlayerDesc">Классический сапёр</div>
+                </div>
+                <div class="mode-card disabled" id="multiplayerModeBtn">
+                    <div class="mode-icon">👥</div>
+                    <div class="mode-name" data-i18n="multiplayer">Друг против друга</div>
+                    <div class="mode-desc"><span class="dev-badge" data-i18n="inDev">В разработке</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Топ-10 -->
+    <div class="modal-overlay" id="leaderboardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="leaderboard">Топ-10 игроков</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div id="leaderboardContainer"></div>
+            <p style="margin-top:10px;font-size:.8rem;opacity:.6;" data-i18n="leaderboardUpdate">Обновляется раз в 5 минут</p>
+        </div>
+    </div>
+    
+    <!-- Рулетка -->
+    <div class="modal-overlay" id="rouletteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="roulette">Рулетка</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            <div style="text-align:center;padding:40px 20px;">
+                <div style="font-size:4rem;margin-bottom:20px;">🎰</div>
+                <h2 style="margin-bottom:10px;" data-i18n="inDev">В разработке</h2>
+                <p style="opacity:.7;">Скоро здесь появится рулетка!</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Друзья -->
+    <div class="modal-overlay" id="friendsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="friends">Друзья</div>
+                <button class="close-btn" data-close>&times;</button>
+            </div>
+            
+            <div style="padding:15px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:12px;margin-bottom:20px;text-align:center;">
+                <p style="font-size:.9rem;opacity:.7;margin-bottom:5px;" data-i18n="yourId">Ваш ID:</p>
+                <p style="font-size:1.5rem;font-weight:800;color:#ffd700;" id="myTelegramId">12345</p>
+                <p style="font-size:.8rem;opacity:.5;" data-i18n="sendIdToFriend">Отправьте этот ID другу, чтобы он добавил вас</p>
+            </div>
+            
+            <div id="friendsList"></div>
+            <div id="incomingRequests" style="margin-top:15px;"></div>
+            
+            <div style="margin-top:15px;">
+                <label style="display:block;margin-bottom:8px;font-weight:600;" data-i18n="addFriendById">Добавить друга по ID:</label>
+                <div style="display:flex;gap:10px;">
+                    <input type="number" id="friendIdInput" class="nickname-input" placeholder="Telegram ID друга" style="flex:1;">
+                    <button class="btn" id="sendFriendRequestBtn" style="background:rgba(76,175,80,.3);border-color:#4caf50;">➕</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="toast" id="toast"></div>
-
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4e4XodnvlzdktjnVu4NXBkmCzx1TGDTc",
+            authDomain: "mtapp-4172f.firebaseapp.com",
+            projectId: "mtapp-4172f",
+            storageBucket: "mtapp-4172f.firebasestorage.app",
+            messagingSenderId: "1085097323174",
+            appId: "1:1085097323174:web:a07c1d2963be09c14f2267",
+            measurementId: "G-3JKFV55MW0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    
     <script>
         // ========== БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ TELEGRAM ==========
         try {
@@ -125,197 +494,1316 @@
                 window.Telegram.WebApp.expand();
                 window.Telegram.WebApp.ready();
             }
-        } catch (e) {
-            console.log('Обычный браузер, Telegram WebApp не используется');
-        }
-
+        } catch (e) {}
+        
         (function() {
-            // ========== ДАННЫЕ ==========
-            const themes=[{id:'ocean',name:{ru:'Океанский закат',en:'Ocean Twilight'},price:0,gradient:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)'},{id:'sunset',name:{ru:'Персиковый закат',en:'Sunset Peach'},price:0,gradient:'linear-gradient(135deg,#ff9a9e,#fad0c4,#fbc2eb)'},{id:'forest',name:{ru:'Лесная мята',en:'Forest Mint'},price:0,gradient:'linear-gradient(135deg,#134e5e,#71b280,#134e5e)'},{id:'midnight',name:{ru:'Полночное небо',en:'Midnight Sky'},price:50,gradient:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'},{id:'candy',name:{ru:'Конфетный поп',en:'Candy Pop'},price:80,gradient:'linear-gradient(135deg,#f953c6,#b91d73,#f953c6)'},{id:'cyber',name:{ru:'Кибер-неон',en:'Cyber Neon'},price:120,gradient:'linear-gradient(135deg,#00f260,#0575e6,#ff00cc)'},{id:'royal',name:{ru:'Королевское золото',en:'Royal Gold'},price:150,gradient:'linear-gradient(135deg,#f7971e,#ffd200,#f7971e)'},{id:'aurora',name:{ru:'Аврора',en:'Aurora'},price:200,gradient:'linear-gradient(135deg,#00c9ff,#92fe9d,#00c9ff)'},{id:'yinyang',name:{ru:'Инь-Янь',en:'Yin Yang'},price:0,gradient:'linear-gradient(135deg,#000,#fff,#000)',secret:true},{id:'matrix',name:{ru:'Матрица',en:'Matrix'},price:0,gradient:'linear-gradient(135deg,#003300,#00ff00,#003300)',secret:true},{id:'space',name:{ru:'Космос',en:'Space'},price:0,gradient:'linear-gradient(135deg,#000033,#000066,#000)',secret:true}];
-            const skins=[{id:'classic',name:{ru:'Классическая мина',en:'Classic Mine'},price:0,icon:'💣'},{id:'star',name:{ru:'Звезда',en:'Star'},price:0,icon:'⭐'},{id:'flower',name:{ru:'Цветок',en:'Flower'},price:0,icon:'🌸'},{id:'bomb',name:{ru:'Бомба с фитилём',en:'Fuse Bomb'},price:50,icon:'🧨'},{id:'skull',name:{ru:'Череп',en:'Skull'},price:80,icon:'💀'},{id:'alien',name:{ru:'Пришелец',en:'Alien'},price:100,icon:'👾'},{id:'fire',name:{ru:'Огонь',en:'Fire'},price:120,icon:'🔥'},{id:'diamond',name:{ru:'Алмаз',en:'Diamond'},price:150,icon:'💎'},{id:'golden',name:{ru:'Золотая мина',en:'Golden Mine'},price:0,icon:'✨',secret:true}];
-            const boosters=[{id:'safe_cell',name:{ru:'Безопасная клетка',en:'Safe Cell'},price:10,icon:'🛡️'},{id:'freeze_time',name:{ru:'Заморозка времени',en:'Freeze Time'},price:20,icon:'❄️'},{id:'hint_zone',name:{ru:'Подсказка зоны',en:'Hint Zone'},price:15,icon:'💡'}];
+            // ========== ДАННЫЕ TELEGRAM ==========
+            const tg = window.Telegram?.WebApp;
+            const telegramUser = tg?.initDataUnsafe?.user || null;
+            const telegramId = telegramUser ? telegramUser.id : 12345;
+            const firstName = telegramUser ? telegramUser.first_name : 'Гость';
+            const lastName = telegramUser ? telegramUser.last_name : '';
+            const username = telegramUser ? telegramUser.username : 'username';
+            const avatarUrl = telegramUser?.photo_url || null;
             
-            const translations={ru:{instruction:'Инструкция',shop:'Магазин',stats:'Статистика',difficulty:'Сложность',size:'Размер поля',restart:'Начать заново',minesLeft:'Мины',timer:'Время',balance:'Баланс',close:'Закрыть',apply:'Применить',buy:'Купить',select:'Выбрать',selected:'Выбрано',owned:'Куплено',price:'Цена',notEnough:'Недостаточно монет!',purchased:'Покупка успешна!',invalidSize:'Неверный размер!',fieldSizeTitle:'Размер поля',width:'Ширина',height:'Высота',difficultyTitle:'Сложность',stars:'звёзд(ы)',themesTab:'Темы',skinsTab:'Скины мин',boostersTab:'Бустеры',instructionTitle:'Как играть',instructionText:'<p><b>Цель игры</b> — открыть все клетки, не содержащие мины.</p><p>🔹 <b>Левая кнопка мыши</b> — открыть клетку.</p><p>🔹 <b>Цифры</b> показывают, сколько мин в соседних клетках.</p><p>🔹 <b>Правая кнопка мыши</b> — флажок.</p><p>🔹 <b>Победа</b> — все безопасные клетки открыты.</p><p>🔹 <b>Поражение</b> — открыли мину.</p>',winTitle:'Поздравляем! Вы выиграли!',winMsg:'Вы получили',loseTitle:'Вы проиграли!',loseMsg:'Попробуйте ещё раз',newGame:'Новая игра',playAgain:'Играть снова',cheat:'Чит',cheatTitle:'Чит-панель',highlightMines:'Подсвечивать мины',addCoins:'Добавить 100000 монет',resetGame:'Полный сброс',autoWin:'Автопобеда',boom:'Бах',technicalIssues:'Технические неполадки',errorReport:'Отчёт о сбое',errorCode:'Код ошибки: 0x211224',wait:'Пожалуйста, подождите...',statsTitle:'Статистика',noStats:'Нет данных',wins:'Побед',losses:'Поражений',winRate:'Процент побед',yinyangUnlocked:'Тема Инь-Янь разблокирована!',matrixUnlocked:'Тема Матрица разблокирована!',spaceUnlocked:'Тема Космос разблокирована!',goldenUnlocked:'Скин Золотая мина разблокирован!',continueGame:'Продолжить',levelUp:'Уровень повышен!',achievementUnlocked:'Достижение разблокировано!',play:'Играть',settings:'Настройки',about:'О разработчике',profile:'Профиль',nickname:'Никнейм',save:'Сохранить',singlePlayer:'Одиночная игра',multiplayer:'Игра друг против друга',pvpWarning:'В этом режиме опыт (XP) не накапливается.',pvpOk:'ОК'},en:{instruction:'Instructions',shop:'Shop',stats:'Statistics',difficulty:'Difficulty',size:'Field Size',restart:'Restart',minesLeft:'Mines',timer:'Time',balance:'Balance',close:'Close',apply:'Apply',buy:'Buy',select:'Select',selected:'Selected',owned:'Owned',price:'Price',notEnough:'Not enough coins!',purchased:'Purchase successful!',invalidSize:'Invalid size!',fieldSizeTitle:'Field Size',width:'Width',height:'Height',difficultyTitle:'Difficulty',stars:'stars',themesTab:'Themes',skinsTab:'Mine Skins',boostersTab:'Boosters',instructionTitle:'How to Play',instructionText:'<p><b>Goal</b> — open all cells without mines.</p><p>🔹 <b>Left click</b> — open cell.</p><p>🔹 <b>Numbers</b> show mines nearby.</p><p>🔹 <b>Right click</b> — flag.</p><p>🔹 <b>Win</b> — all safe cells opened.</p><p>🔹 <b>Loss</b> — opened mine.</p>',winTitle:'Congratulations! You won!',winMsg:'You earned',loseTitle:'You lost!',loseMsg:'Try again',newGame:'New Game',playAgain:'Play Again',cheat:'Cheat',cheatTitle:'Cheat Panel',highlightMines:'Highlight Mines',addCoins:'Add 100000 coins',resetGame:'Full Reset',autoWin:'Auto Win',boom:'Boom',technicalIssues:'Technical Issues',errorReport:'Error Report',errorCode:'Error code: 0x211224',wait:'Please wait...',statsTitle:'Statistics',noStats:'No data',wins:'Wins',losses:'Losses',winRate:'Win rate',yinyangUnlocked:'Yin-Yang theme unlocked!',matrixUnlocked:'Matrix theme unlocked!',spaceUnlocked:'Space theme unlocked!',goldenUnlocked:'Golden Mine skin unlocked!',continueGame:'Continue',levelUp:'Level up!',achievementUnlocked:'Achievement unlocked!',play:'Play',settings:'Settings',about:'About developer',profile:'Profile',nickname:'Nickname',save:'Save',singlePlayer:'Single Player',multiplayer:'Player vs Player',pvpWarning:'XP is not accumulated in this mode.',pvpOk:'OK'}};
+            // ========== ТЕМЫ ==========
+            const themes=[
+                {id:'ocean',name:{ru:'Океанский закат',en:'Ocean Twilight'},price:0,gradient:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)'},
+                {id:'sunset',name:{ru:'Персиковый закат',en:'Sunset Peach'},price:0,gradient:'linear-gradient(135deg,#ff9a9e,#fad0c4,#fbc2eb)'},
+                {id:'forest',name:{ru:'Лесная мята',en:'Forest Mint'},price:0,gradient:'linear-gradient(135deg,#134e5e,#71b280,#134e5e)'},
+                {id:'midnight',name:{ru:'Полночное небо',en:'Midnight Sky'},price:50,gradient:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'},
+                {id:'candy',name:{ru:'Конфетный поп',en:'Candy Pop'},price:80,gradient:'linear-gradient(135deg,#f953c6,#b91d73,#f953c6)'},
+                {id:'cyber',name:{ru:'Кибер-неон',en:'Cyber Neon'},price:120,gradient:'linear-gradient(135deg,#00f260,#0575e6,#ff00cc)'},
+                {id:'royal',name:{ru:'Королевское золото',en:'Royal Gold'},price:150,gradient:'linear-gradient(135deg,#f7971e,#ffd200,#f7971e)'},
+                {id:'aurora',name:{ru:'Аврора',en:'Aurora'},price:200,gradient:'linear-gradient(135deg,#00c9ff,#92fe9d,#00c9ff)'},
+                {id:'yinyang',name:{ru:'Инь-Янь',en:'Yin Yang'},price:0,gradient:'linear-gradient(135deg,#000,#fff,#000)',secret:true},
+                {id:'matrix',name:{ru:'Матрица',en:'Matrix'},price:0,gradient:'linear-gradient(135deg,#003300,#00ff00,#003300)',secret:true},
+                {id:'space',name:{ru:'Космос',en:'Space'},price:0,gradient:'linear-gradient(135deg,#000033,#000066,#000)',secret:true}
+            ];
             
-            const hints={ru:["Подсказка: Используйте правую кнопку мыши, чтобы ставить флажки.","Подсказка: Числа показывают, сколько мин в соседних клетках.","Подсказка: Начните с углов — там часто меньше мин.","Подсказка: Если рядом с цифрой уже стоит нужное количество флажков, остальные клетки безопасны.","Подсказка: Долгое нажатие на мобильном устройстве ставит флажок.","Подсказка: Вы можете выбрать тему и скин мины в Магазине.","Подсказка: За победу вы получаете монеты в зависимости от сложности."],en:["Hint: Right-click to place a flag.","Hint: Numbers show how many mines are in neighboring cells.","Hint: Start from corners.","Hint: If the number already has that many flags around, remaining cells are safe.","Hint: Long-press on mobile to place a flag.","Hint: You can choose a theme and mine skin in the Shop.","Hint: You earn coins for winning depending on difficulty."]};
-            
-            // ========== СОСТОЯНИЕ ==========
-            const defaultState={balance:0,ownedThemes:['ocean','sunset','forest'],ownedSkins:['classic','star','flower'],selectedTheme:'ocean',selectedSkin:'classic',lang:'ru',size:{w:9,h:9},difficulty:2,statistics:{},xp:0,level:1,boosters:{},achievements:[],lastGames:[],bestTime:{},sound:true,profile:{nickname:'',avatar:'😊'},lastBonusTimes:{}};
-            function loadState(){try{const s=localStorage.getItem('insik_sapper_state');if(s){const p=JSON.parse(s);if(!p.statistics)p.statistics={};if(!p.boosters)p.boosters={};if(!p.achievements)p.achievements=[];if(!p.lastGames)p.lastGames=[];if(!p.bestTime)p.bestTime={};if(!p.profile)p.profile={nickname:'',avatar:'😊'};if(!p.lastBonusTimes)p.lastBonusTimes={};return{...defaultState,...p}}}catch(e){}return{...defaultState,ownedThemes:[...defaultState.ownedThemes],ownedSkins:[...defaultState.ownedSkins],statistics:{},boosters:{},achievements:[],lastGames:[],bestTime:{},profile:{nickname:'',avatar:'😊'},lastBonusTimes:{}}}
-            let state=loadState();
-            if(typeof state.size!=='object'||!state.size.w||!state.size.h)state.size={w:9,h:9};
-            if(!Array.isArray(state.ownedThemes))state.ownedThemes=[...defaultState.ownedThemes];
-            if(!Array.isArray(state.ownedSkins))state.ownedSkins=[...defaultState.ownedSkins];
-            if(!state.statistics)state.statistics={};if(!state.boosters)state.boosters={};if(!state.achievements)state.achievements=[];if(!state.lastGames)state.lastGames=[];if(!state.bestTime)state.bestTime={};if(!state.profile)state.profile={nickname:'',avatar:'😊'};if(!state.lastBonusTimes)state.lastBonusTimes={};
-            function saveState(){try{localStorage.setItem('insik_sapper_state',JSON.stringify(state))}catch(e){}}
-            
-            // ========== DOM ==========
-            const boardEl=document.getElementById('board'),boardWrapper=document.getElementById('boardWrapper'),mineCounterEl=document.getElementById('mineCounter'),timerDisplayEl=document.getElementById('timerDisplay'),balanceAmountEl=document.getElementById('balanceAmount'),levelDisplayEl=document.getElementById('levelDisplay'),xpDisplayEl=document.getElementById('xpDisplay'),levelInfo=document.getElementById('levelInfo'),hintEl=document.getElementById('hint'),instructionModal=document.getElementById('instructionModal'),difficultyModal=document.getElementById('difficultyModal'),sizeModal=document.getElementById('sizeModal'),shopModal=document.getElementById('shopModal'),resultModal=document.getElementById('resultModal'),resultTitle=document.getElementById('resultTitle'),resultMessage=document.getElementById('resultMessage'),resultBtn=document.getElementById('resultBtn'),toastEl=document.getElementById('toast'),shopItems=document.getElementById('shopItems'),sizeError=document.getElementById('sizeError'),inputWidth=document.getElementById('inputWidth'),inputHeight=document.getElementById('inputHeight'),cheatModal=document.getElementById('cheatModal'),cheatBtn=document.getElementById('cheatBtn'),statsModal=document.getElementById('statsModal'),statsContainer=document.getElementById('statsContainer'),statsBtn=document.getElementById('statsBtn'),exitThemeBtn=document.getElementById('exitThemeBtn'),leavesContainer=document.getElementById('leavesContainer'),soundToggle=document.getElementById('soundToggle'),continueBtn=document.getElementById('continueBtn'),startMenuModal=document.getElementById('startMenuModal'),singlePlayerBtn=document.getElementById('singlePlayerBtn'),multiplayerBtn=document.getElementById('multiplayerBtn'),settingsBtn=document.getElementById('settingsBtn'),aboutBtn=document.getElementById('aboutBtn'),profileMenuBtn=document.getElementById('profileMenuBtn'),pvpModal=document.getElementById('pvpModal'),pvpOkBtn=document.getElementById('pvpOkBtn'),pvpIndicator=document.getElementById('pvpIndicator'),settingsModal=document.getElementById('settingsModal'),aboutModal=document.getElementById('aboutModal'),profileModal=document.getElementById('profileModal'),nicknameInput=document.getElementById('nicknameInput'),avatarOptions=document.getElementById('avatarOptions'),saveProfileBtn=document.getElementById('saveProfileBtn'),profileAvatar=document.getElementById('profileAvatar'),profileName=document.getElementById('profileName'),konamiProgress=document.getElementById('konamiProgress'),menuBtn=document.getElementById('menuBtn'),profileBtn=document.getElementById('profileBtn'),versionFooter=document.getElementById('versionFooter');
-            
-            // ========== ПЕРЕМЕННЫЕ ==========
-            let rows=state.size.h,cols=state.size.w,minesCount=0,board=[],gameOver=false,gameStarted=false,minesPlaced=false,seconds=0,timerInterval=null,flagsCount=0,revealedSafeCount=0,hintInterval=null,highlightMinesActive=false,keyBuffer=[],soundEnabled=state.sound,audioCtx=null,konamiBuffer=[],versionClicks=0,selectedBooster=null,applySizeLock=false,gameMode='single',currentPlayer=1;
-            const konamiSequence=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight'];
-            const boosterIcons=document.querySelectorAll('.booster-icon');
-            
-            // ========== ФУНКЦИИ ==========
-            function t(key){return translations[state.lang][key]||key}
-            function updateBalance(){balanceAmountEl.textContent=state.balance}
-            function updateLevel(){levelDisplayEl.textContent=state.level;xpDisplayEl.textContent=state.xp+' XP'}
-            function updateBoosterUI(){document.querySelector('#booster-safe .booster-count').textContent=state.boosters.safe_cell||0;document.querySelector('#booster-freeze .booster-count').textContent=state.boosters.freeze_time||0;document.querySelector('#booster-hint .booster-count').textContent=state.boosters.hint_zone||0}
-            function updateProfileUI(){profileAvatar.textContent=state.profile.avatar;profileName.textContent=state.profile.nickname||'Профиль'}
-            function applyTheme(themeId){const theme=themes.find(th=>th.id===themeId);if(!theme)return;document.body.style.backgroundImage=theme.gradient;document.body.style.backgroundSize='cover';document.body.style.backgroundAttachment='fixed';document.body.classList.remove('pvp-player1','pvp-player2');updateExitThemeButton();updateLeaves()}
-            function updateLeaves(){if(state.selectedTheme==='yinyang'){leavesContainer.style.display='block';startLeaves()}else{leavesContainer.style.display='none';leavesContainer.innerHTML=''}}
-            function startLeaves(){leavesContainer.innerHTML='';const leafEmojis=['🍁','🍂','🍃','🌿'];for(let i=0;i<20;i++){const leaf=document.createElement('div');leaf.className='leaf';leaf.textContent=leafEmojis[Math.floor(Math.random()*leafEmojis.length)];leaf.style.left=Math.random()*100+'%';leaf.style.fontSize=(Math.random()*20+15)+'px';leaf.style.animationDuration=(Math.random()*10+10)+'s';leaf.style.animationDelay=Math.random()*10+'s';leavesContainer.appendChild(leaf)}}
-            function getMineIcon(){const skin=skins.find(s=>s.id===state.selectedSkin);return skin?skin.icon:'💣'}
-            function getMinePercent(){return[10,15,20,25,30][state.difficulty-1]||15}
-            function calculateMinesCount(){const total=rows*cols;let mines=Math.round(total*getMinePercent()/100);if(mines<1)mines=1;if(mines>total-1)mines=total-1;return mines}
-            function formatTime(sec){const m=Math.floor(sec/60).toString().padStart(2,'0');const s=(sec%60).toString().padStart(2,'0');return`${m}:${s}`}
-            function updateMineCounter(){mineCounterEl.textContent=minesCount-flagsCount}
-            function updateTimer(){timerDisplayEl.textContent=formatTime(seconds)}
-            function startTimer(){if(timerInterval)clearInterval(timerInterval);seconds=0;updateTimer();timerInterval=setInterval(()=>{seconds++;updateTimer()},1000)}
-            function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null}}
-            function showToast(msg,type='info'){toastEl.textContent=msg;toastEl.className='toast show '+type;setTimeout(()=>toastEl.classList.remove('show'),2200)}
-            function openModal(modal){modal.classList.add('active')}
-            function closeModal(modal){modal.classList.remove('active')}
-            
-            // ========== ЗВУК ==========
-            function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
-            function playSound(type){if(!soundEnabled)return;try{initAudio();const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);gain.gain.value=.1;osc.type='sine';if(type==='click'){osc.frequency.value=800;gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.1);osc.start();osc.stop(audioCtx.currentTime+.1)}else if(type==='flag'){osc.frequency.value=1200;gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.15);osc.start();osc.stop(audioCtx.currentTime+.15)}else if(type==='win'){osc.frequency.value=1000;gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.3);osc.start();osc.stop(audioCtx.currentTime+.3)}else if(type==='lose'){osc.frequency.value=300;gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.5);osc.start();osc.stop(audioCtx.currentTime+.5)}}catch(e){}}
-            
-            soundToggle.addEventListener('click',()=>{soundEnabled=!soundEnabled;state.sound=soundEnabled;saveState();soundToggle.textContent=soundEnabled?'🔊':'🔇'});
-            
-            // ========== XP И УРОВНИ ==========
-            function addXP(amount){state.xp+=amount;const needed=state.level*100;if(state.xp>=needed){state.xp-=needed;state.level++;showToast(t('levelUp')+' '+state.level,'success');playSound('win')}updateLevel();saveState()}
-            levelInfo.addEventListener('click',()=>{const needed=state.level*100-state.xp;const approxWins=Math.ceil(needed/(state.difficulty*10));const approxLosses=Math.ceil(needed/2);showToast(`До следующего уровня: ${needed} XP. Нужно примерно ${approxWins} побед или ${approxLosses} поражений на текущей сложности.`,'info')});
-            
-            // ========== ДОСТИЖЕНИЯ ==========
-            function totalWins(){return Object.values(state.statistics).reduce((sum,s)=>sum+s.wins,0)}
-            function checkAchievements(){const achievementsList=[{id:'first_win',check:()=>totalWins()>=1,name:{ru:'Первая победа',en:'First Win'}},{id:'five_wins',check:()=>totalWins()>=5,name:{ru:'Пять побед',en:'Five Wins'}},{id:'ten_wins',check:()=>totalWins()>=10,name:{ru:'Десять побед',en:'Ten Wins'}},{id:'no_flags',check:()=>state.lastGames.length>0&&state.lastGames[0].flags===0&&state.lastGames[0].won,name:{ru:'Без флажков',en:'No Flags'}}];achievementsList.forEach(ach=>{if(!state.achievements.includes(ach.id)&&ach.check()){state.achievements.push(ach.id);showToast(t('achievementUnlocked')+': '+ach.name[state.lang],'success');playSound('win')}})}
-            
-            // ========== СТАТИСТИКА ==========
-            function updateStatistics(won,time,flags){const key=`${state.difficulty}_${state.size.w}x${state.size.h}`;if(!state.statistics[key])state.statistics[key]={wins:0,losses:0,bestTime:null};if(won){state.statistics[key].wins++;if(!state.statistics[key].bestTime||time<state.statistics[key].bestTime)state.statistics[key].bestTime=time}else{state.statistics[key].losses++}state.lastGames.unshift({won,difficulty:state.difficulty,size:`${state.size.w}x${state.size.h}`,time,flags,date:new Date().toISOString()});if(state.lastGames.length>10)state.lastGames.pop();addXP(won?state.difficulty*10:2);checkAchievements();saveState()}
-            
-            function renderStatistics(){statsContainer.innerHTML='';const entries=Object.entries(state.statistics);if(entries.length===0){statsContainer.innerHTML=`<p style="text-align:center;opacity:.7;">${t('noStats')}</p>`;return}entries.forEach(([key,data])=>{const[diff,sizeStr]=key.split('_');const stars='★'.repeat(parseInt(diff));const total=data.wins+data.losses;const rate=total>0?Math.round((data.wins/total)*100):0;const card=document.createElement('div');card.className='stats-card';card.innerHTML=`<div class="stats-header"><span class="stats-stars">${stars}</span><span>${sizeStr}</span></div><div class="stats-details"><span>${t('wins')}: ${data.wins}</span><span>${t('losses')}: ${data.losses}</span></div><div class="stats-winrate"><span>${t('winRate')}: ${rate}%</span><div class="progress-bar"><div class="progress-fill" style="width:${rate}%"></div></div></div>${data.bestTime?`<div style="margin-top:5px;font-size:.9rem;">Лучшее время: ${formatTime(data.bestTime)}</div>`:''}`;statsContainer.appendChild(card)});if(state.lastGames.length>0){const recentDiv=document.createElement('div');recentDiv.className='recent-games';recentDiv.innerHTML='<h4>Последние игры</h4>';state.lastGames.forEach(game=>{const div=document.createElement('div');div.className='recent-game-item';div.innerHTML=`<span>${game.won?'✅':'❌'} ${game.difficulty}★ ${game.size}</span><span>${formatTime(game.time)}</span><span>🚩${game.flags}</span>`;recentDiv.appendChild(div)});statsContainer.appendChild(recentDiv)}}
+            // ========== СКИНЫ ==========
+            const skins=[
+                {id:'classic',name:{ru:'Классическая мина',en:'Classic Mine'},price:0,icon:'💣'},
+                {id:'star',name:{ru:'Звезда',en:'Star'},price:0,icon:'⭐'},
+                {id:'flower',name:{ru:'Цветок',en:'Flower'},price:0,icon:'🌸'},
+                {id:'bomb',name:{ru:'Бомба с фитилём',en:'Fuse Bomb'},price:50,icon:'🧨'},
+                {id:'skull',name:{ru:'Череп',en:'Skull'},price:80,icon:'💀'},
+                {id:'alien',name:{ru:'Пришелец',en:'Alien'},price:100,icon:'👾'},
+                {id:'fire',name:{ru:'Огонь',en:'Fire'},price:120,icon:'🔥'},
+                {id:'diamond',name:{ru:'Алмаз',en:'Diamond'},price:150,icon:'💎'},
+                {id:'golden',name:{ru:'Золотая мина',en:'Golden Mine'},price:0,icon:'✨',secret:true}
+            ];
             
             // ========== БУСТЕРЫ ==========
-            function useBooster(id){if(!state.boosters[id]||state.boosters[id]<=0)return false;state.boosters[id]--;saveState();updateBoosterUI();return true}
-            function safeCell(){if(!useBooster('safe_cell')){showToast('Нет бустера!','error');return}let safeCells=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(!board[r][c].mine&&!board[r][c].revealed&&!board[r][c].flagged)safeCells.push([r,c]);if(safeCells.length===0)return;const[r,c]=safeCells[Math.floor(Math.random()*safeCells.length)];if(!gameStarted){gameStarted=true;startTimer();if(!minesPlaced)placeMines(r,c)}revealCell(r,c)}
-            function freezeTime(){if(!useBooster('freeze_time')){showToast('Нет бустера!','error');return}if(timerInterval){clearInterval(timerInterval);timerInterval=null;showToast('Таймер заморожен на 10 секунд!','info');setTimeout(()=>{if(gameStarted&&!gameOver)startTimer()},10000)}}
-            function hintZone(){if(!useBooster('hint_zone')){showToast('Нет бустера!','error');return}let candidates=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(!board[r][c].mine&&!board[r][c].revealed&&board[r][c].neighborMines===0)candidates.push([r,c]);if(candidates.length===0)return;const[r,c]=candidates[Math.floor(Math.random()*candidates.length)];if(!gameStarted){gameStarted=true;startTimer();if(!minesPlaced)placeMines(r,c)}revealCell(r,c)}
+            const boosters=[
+                {id:'safe_cell',name:{ru:'Безопасная клетка',en:'Safe Cell'},price:10,icon:'🛡️',desc:{ru:'Открывает случайную безопасную клетку',en:'Opens a random safe cell'}},
+                {id:'freeze_time',name:{ru:'Заморозка времени',en:'Freeze Time'},price:20,icon:'❄️',desc:{ru:'Останавливает таймер на 10 секунд',en:'Stops timer for 10 seconds'}},
+                {id:'hint_zone',name:{ru:'Подсказка зоны',en:'Hint Zone'},price:15,icon:'💡',desc:{ru:'Показывает безопасную зону',en:'Shows a safe zone'}}
+            ];
             
-            boosterIcons.forEach(icon=>{icon.addEventListener('click',e=>{const boosterId=icon.dataset.booster;if(selectedBooster===boosterId){selectedBooster=null;icon.classList.remove('active')}else{if(selectedBooster){document.querySelector(`.booster-icon[data-booster="${selectedBooster}"]`).classList.remove('active')}selectedBooster=boosterId;icon.classList.add('active')}})});
+            // ========== ПЕРЕВОДЫ ==========
+            const translations = {
+                ru: {
+                    instruction:'Инструкция',shop:'Магазин',difficulty:'Сложность',size:'Размер поля',restart:'Начать заново',
+                    balance:'Баланс',close:'Закрыть',apply:'Применить',buy:'Купить',select:'Выбрать',selected:'Выбрано',owned:'Куплено',
+                    notEnough:'Недостаточно монет!',purchased:'Покупка успешна!',invalidSize:'Неверный размер!',
+                    fieldSizeTitle:'Размер поля',width:'Ширина',height:'Высота',difficultyTitle:'Сложность',
+                    themesTab:'Темы',skinsTab:'Скины мин',boostersTab:'Бустеры',
+                    instructionTitle:'Как играть',
+                    instructionText:'<p><b>Цель игры</b> — открыть все клетки, не содержащие мины.</p><p>🔹 <b>Левая кнопка мыши</b> — открыть клетку.</p><p>🔹 <b>Цифры</b> показывают, сколько мин в соседних клетках.</p><p>🔹 <b>Правая кнопка мыши</b> — флажок.</p>',
+                    winTitle:'Поздравляем! Вы выиграли!',winMsg:'Вы получили',loseTitle:'Вы проиграли!',loseMsg:'Попробуйте ещё раз',
+                    newGame:'Новая игра',playAgain:'Играть снова',
+                    cheat:'Чит',cheatTitle:'Чит-панель',highlightMines:'Подсвечивать мины',addCoins:'Добавить 100000 монет',
+                    resetGame:'Полный сброс',autoWin:'Автопобеда',boom:'Бах',
+                    continueGame:'Продолжить',levelUp:'Уровень повышен!',achievementUnlocked:'Достижение разблокировано!',
+                    settings:'Настройки',about:'О разработчике',profile:'Профиль',
+                    singlePlayer:'Одиночная игра',multiplayer:'Друг против друга',inDev:'В разработке',
+                    modes:'Режимы',game:'Игра',language:'Язык / Language',sound:'Звук / Sound',soundOn:'Вкл',soundOff:'Выкл',
+                    promocode:'Промокод',leaderboard:'Топ-10 игроков',leaderboardUpdate:'Обновляется раз в 5 минут',
+                    friends:'Друзья',addFriend:'Добавить',wins:'Побед',losses:'Поражений',winRate:'Коэффициент побед',
+                    achievements:'Достижения',noStats:'Нет данных',menu:'Меню',
+                    singlePlayerDesc:'Классический сапёр',noFriends:'Нет друзей',
+                    promoInvalid:'Неверный промокод',promoUsed:'Промокод уже использован',promoSuccess:'Промокод применён!',
+                    noOpponents:'Нет достойных соперников',impatient:'Получено достижение: Нетерпеливый',
+                    roulette:'Рулетка',rouletteBalance:'Баланс',
+                    yourId:'Ваш ID',sendIdToFriend:'Отправьте этот ID другу, чтобы он добавил вас',
+                    addFriendById:'Добавить друга по ID',incomingRequests:'Входящие заявки'
+                },
+                en: {
+                    instruction:'Instructions',shop:'Shop',difficulty:'Difficulty',size:'Field Size',restart:'Restart',
+                    balance:'Balance',close:'Close',apply:'Apply',buy:'Buy',select:'Select',selected:'Selected',owned:'Owned',
+                    notEnough:'Not enough coins!',purchased:'Purchase successful!',invalidSize:'Invalid size!',
+                    fieldSizeTitle:'Field Size',width:'Width',height:'Height',difficultyTitle:'Difficulty',
+                    themesTab:'Themes',skinsTab:'Mine Skins',boostersTab:'Boosters',
+                    instructionTitle:'How to Play',
+                    instructionText:'<p><b>Goal</b> — open all cells without mines.</p><p>🔹 <b>Left click</b> — open cell.</p><p>🔹 <b>Numbers</b> show mines nearby.</p><p>🔹 <b>Right click</b> — flag.</p>',
+                    winTitle:'Congratulations! You won!',winMsg:'You earned',loseTitle:'You lost!',loseMsg:'Try again',
+                    newGame:'New Game',playAgain:'Play Again',
+                    cheat:'Cheat',cheatTitle:'Cheat Panel',highlightMines:'Highlight Mines',addCoins:'Add 100000 coins',
+                    resetGame:'Full Reset',autoWin:'Auto Win',boom:'Boom',
+                    continueGame:'Continue',levelUp:'Level up!',achievementUnlocked:'Achievement unlocked!',
+                    settings:'Settings',about:'About developer',profile:'Profile',
+                    singlePlayer:'Single Player',multiplayer:'Player vs Player',inDev:'In development',
+                    modes:'Modes',game:'Game',language:'Language',sound:'Sound',soundOn:'On',soundOff:'Off',
+                    promocode:'Promo code',leaderboard:'Top 10 players',leaderboardUpdate:'Updates every 5 minutes',
+                    friends:'Friends',addFriend:'Add',wins:'Wins',losses:'Losses',winRate:'Win rate',
+                    achievements:'Achievements',noStats:'No data',menu:'Menu',
+                    singlePlayerDesc:'Classic minesweeper',noFriends:'No friends',
+                    promoInvalid:'Invalid promo code',promoUsed:'Promo code already used',promoSuccess:'Promo code applied!',
+                    noOpponents:'No worthy opponents',impatient:'Achievement unlocked: Impatient',
+                    roulette:'Roulette',rouletteBalance:'Balance',
+                    yourId:'Your ID',sendIdToFriend:'Send this ID to your friend so they can add you',
+                    addFriendById:'Add friend by ID',incomingRequests:'Incoming requests'
+                }
+            };
             
+            // ========== ПОДСКАЗКИ ==========
+            const hints={
+                ru:["Используйте правую кнопку мыши для флажков","Числа показывают количество мин рядом","Начните с углов — там безопаснее","Если рядом с цифрой уже стоит нужное количество флажков, остальные клетки безопасны","Долгое нажатие на мобильном ставит флажок","Вы можете выбрать тему и скин мины в Магазине","За победу вы получаете монеты","Бустеры помогут в сложных ситуациях","Проверяйте таблицу лидеров","Добавляйте друзей по Telegram ID","Промокоды дают бонусы","Секретные коды открывают темы","Играйте каждый день для достижений","Лучшее время сохраняется в статистике","Попробуйте режим PvP","Сложность 5★ даёт больше наград"],
+                en:["Use right click for flags","Numbers show nearby mines","Start from corners — safer there","If number already has that many flags, remaining cells are safe","Long press on mobile places flag","You can choose theme and mine skin in Shop","You earn coins for winning","Boosters help in tough situations","Check the leaderboard","Add friends by Telegram ID","Promo codes give bonuses","Secret codes unlock themes","Play daily for achievements","Best time is saved in statistics","Try PvP mode","5★ difficulty gives more rewards"]
+            };
+            // ========== ДОСТИЖЕНИЯ ==========
+            const achievementsList = [
+                {id:'first_win',name:{ru:'Первая победа',en:'First Win'},desc:{ru:'Выиграть первую игру',en:'Win first game'},icon:'🏆',check:()=>totalWins()>=1},
+                {id:'five_wins',name:{ru:'Пять побед',en:'Five Wins'},desc:{ru:'Выиграть 5 игр',en:'Win 5 games'},icon:'🎖️',check:()=>totalWins()>=5},
+                {id:'ten_wins',name:{ru:'Десять побед',en:'Ten Wins'},desc:{ru:'Выиграть 10 игр',en:'Win 10 games'},icon:'🥇',check:()=>totalWins()>=10},
+                {id:'twenty_wins',name:{ru:'Двадцать побед',en:'Twenty Wins'},desc:{ru:'Выиграть 20 игр',en:'Win 20 games'},icon:'💎',check:()=>totalWins()>=20},
+                {id:'fifty_wins',name:{ru:'Пятьдесят побед',en:'Fifty Wins'},desc:{ru:'Выиграть 50 игр',en:'Win 50 games'},icon:'👑',check:()=>totalWins()>=50},
+                {id:'hundred_wins',name:{ru:'Сто побед',en:'Hundred Wins'},desc:{ru:'Выиграть 100 игр',en:'Win 100 games'},icon:'🌟',check:()=>totalWins()>=100},
+                {id:'first_loss',name:{ru:'Первое поражение',en:'First Loss'},desc:{ru:'Проиграть первую игру',en:'Lose first game'},icon:'💔',check:()=>totalLosses()>=1},
+                {id:'ten_losses',name:{ru:'Десять поражений',en:'Ten Losses'},desc:{ru:'Проиграть 10 игр',en:'Lose 10 games'},icon:'😢',check:()=>totalLosses()>=10},
+                {id:'win_hard',name:{ru:'Победа на 5★',en:'Win on 5★'},desc:{ru:'Выиграть на сложности 5★',en:'Win on 5★ difficulty'},icon:'🔥',check:()=>state.statistics[`5_${state.size.w}x${state.size.h}`]?.wins>0},
+                {id:'no_flags',name:{ru:'Без флажков',en:'No Flags'},desc:{ru:'Выиграть без использования флажков',en:'Win without using flags'},icon:'🚫',check:()=>state.lastGames.length>0&&state.lastGames[0].flags===0&&state.lastGames[0].won},
+                {id:'speed_demon',name:{ru:'Скоростной демон',en:'Speed Demon'},desc:{ru:'Выиграть за 30 секунд',en:'Win in 30 seconds'},icon:'⚡',check:()=>state.lastGames.length>0&&state.lastGames[0].won&&state.lastGames[0].time<=30},
+                {id:'secret_hunter',name:{ru:'Охотник за секретами',en:'Secret Hunter'},desc:{ru:'Открыть все секретные коды',en:'Unlock all secret codes'},icon:'🔍',check:()=>state.allCodesUnlocked},
+                {id:'impatient',name:{ru:'Нетерпеливый',en:'Impatient'},desc:{ru:'Нажать 5 раз на PvP',en:'Click PvP 5 times'},icon:'😤',check:()=>state.pvpClicks>=5},
+                {id:'collector',name:{ru:'Коллекционер',en:'Collector'},desc:{ru:'Купить все темы',en:'Buy all themes'},icon:'🎨',check:()=>themes.every(t=>state.ownedThemes.includes(t.id))},
+                {id:'skin_collector',name:{ru:'Коллекционер скинов',en:'Skin Collector'},desc:{ru:'Купить все скины',en:'Buy all skins'},icon:'💅',check:()=>skins.every(s=>state.ownedSkins.includes(s.id))},
+                {id:'rich',name:{ru:'Богач',en:'Rich'},desc:{ru:'Накопить 10000 монет',en:'Accumulate 10000 coins'},icon:'💰',check:()=>state.balance>=10000},
+                {id:'booster_user',name:{ru:'Бустер-мастер',en:'Booster Master'},desc:{ru:'Использовать бустер 10 раз',en:'Use booster 10 times'},icon:'🛡️',check:()=>state.boosterUses>=10},
+                {id:'level_5',name:{ru:'Уровень 5',en:'Level 5'},desc:{ru:'Достичь 5 уровня',en:'Reach level 5'},icon:'⭐',check:()=>state.level>=5},
+                {id:'level_10',name:{ru:'Уровень 10',en:'Level 10'},desc:{ru:'Достичь 10 уровня',en:'Reach level 10'},icon:'🌟',check:()=>state.level>=10},
+                {id:'pvp_player',name:{ru:'Игрок PvP',en:'PvP Player'},desc:{ru:'Сыграть PvP игру',en:'Play PvP game'},icon:'⚔️',check:()=>state.pvpGames>=1},
+                {id:'perfect_game',name:{ru:'Идеальная игра',en:'Perfect Game'},desc:{ru:'Выиграть без ошибок',en:'Win without mistakes'},icon:'💯',check:()=>state.perfectGames>=1},
+                {id:'daily_player',name:{ru:'Ежедневный игрок',en:'Daily Player'},desc:{ru:'Играть 3 дня подряд',en:'Play 3 days in a row'},icon:'📅',check:()=>state.daysPlayed>=3},
+                {id:'fast_learner',name:{ru:'Быстрый ученик',en:'Fast Learner'},desc:{ru:'Выиграть первую игру',en:'Win first game'},icon:'📚',check:()=>totalWins()>=1},
+                {id:'veteran',name:{ru:'Ветеран',en:'Veteran'},desc:{ru:'Сыграть 100 игр',en:'Play 100 games'},icon:'🎖️',check:()=>totalGames()>=100},
+                {id:'survivor',name:{ru:'Выживший',en:'Survivor'},desc:{ru:'Выиграть на всех сложностях',en:'Win on all difficulties'},icon:'🛡️',check:()=>[1,2,3,4,5].every(d=>Object.keys(state.statistics).some(k=>k.startsWith(d+'_')&&state.statistics[k].wins>0))},
+                {id:'gambler',name:{ru:'Азартный',en:'Gambler'},desc:{ru:'Сыграть в рулетку 10 раз',en:'Play roulette 10 times'},icon:'🎰',check:()=>state.roulettePlays>=10},
+                {id:'friend_maker',name:{ru:'Друг',en:'Friend Maker'},desc:{ru:'Добавить друга',en:'Add a friend'},icon:'🤝',check:()=>state.friendsAdded>=1},
+                {id:'konami_code',name:{ru:'Код Konami',en:'Konami Code'},desc:{ru:'Активировать Konami код',en:'Activate Konami code'},icon:'🎮',check:()=>state.konamiActivated},
+                {id:'all_codes',name:{ru:'Я знаю тайны',en:'I Know Secrets'},desc:{ru:'Открыть все секретные коды',en:'Unlock all secret codes'},icon:'🔐',check:()=>state.allCodesUnlocked},
+                {id:'rich_100k',name:{ru:'Миллионер',en:'Millionaire'},desc:{ru:'Накопить 100000 монет',en:'Accumulate 100000 coins'},icon:'🤑',check:()=>state.balance>=100000}
+            ];
+
+            // ========== СОСТОЯНИЕ ==========
+            const defaultState = {
+                balance: 0,
+                ownedThemes: ['ocean', 'sunset', 'forest'],
+                ownedSkins: ['classic', 'star', 'flower'],
+                selectedTheme: 'ocean',
+                selectedSkin: 'classic',
+                lang: 'ru',
+                size: { w: 9, h: 9 },
+                difficulty: 2,
+                statistics: {},
+                xp: 0,
+                level: 1,
+                boosters: {},
+                achievements: [],
+                lastGames: [],
+                bestTime: {},
+                sound: true,
+                profile: { nickname: '', avatar: '😊' },
+                lastBonusTimes: {},
+                pvpClicks: 0,
+                pvpGames: 0,
+                boosterUses: 0,
+                perfectGames: 0,
+                daysPlayed: 0,
+                roulettePlays: 0,
+                friendsAdded: 0,
+                konamiActivated: false,
+                allCodesUnlocked: false
+            };
+
+            function loadState() {
+                try {
+                    const saved = localStorage.getItem('insik_sapper_state');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (!parsed.statistics) parsed.statistics = {};
+                        if (!parsed.boosters) parsed.boosters = {};
+                        if (!parsed.achievements) parsed.achievements = [];
+                        if (!parsed.lastGames) parsed.lastGames = [];
+                        if (!parsed.bestTime) parsed.bestTime = {};
+                        if (!parsed.profile) parsed.profile = { nickname: '', avatar: '😊' };
+                        if (!parsed.lastBonusTimes) parsed.lastBonusTimes = {};
+                        return { ...defaultState, ...parsed };
+                    }
+                } catch (e) {}
+                return { ...defaultState, ownedThemes: [...defaultState.ownedThemes], ownedSkins: [...defaultState.ownedSkins], statistics: {}, boosters: {}, achievements: [], lastGames: [], bestTime: {}, profile: { nickname: '', avatar: '😊' }, lastBonusTimes: {} };
+            }
+
+            let state = loadState();
+            if (typeof state.size !== 'object' || !state.size.w || !state.size.h) state.size = { w: 9, h: 9 };
+            if (!Array.isArray(state.ownedThemes)) state.ownedThemes = [...defaultState.ownedThemes];
+            if (!Array.isArray(state.ownedSkins)) state.ownedSkins = [...defaultState.ownedSkins];
+            if (!state.statistics) state.statistics = {};
+            if (!state.boosters) state.boosters = {};
+            if (!state.achievements) state.achievements = [];
+            if (!state.lastGames) state.lastGames = [];
+            if (!state.bestTime) state.bestTime = {};
+            if (!state.profile) state.profile = { nickname: '', avatar: '😊' };
+            if (!state.lastBonusTimes) state.lastBonusTimes = {};
+
+            function saveState() {
+                try { localStorage.setItem('insik_sapper_state', JSON.stringify(state)); } catch (e) {}
+            }
+
+            // ========== DOM ЭЛЕМЕНТЫ ==========
+            const boardEl = document.getElementById('board');
+            const boardWrapper = document.getElementById('boardWrapper');
+            const mineCounterEl = document.getElementById('mineCounter');
+            const timerDisplayEl = document.getElementById('timerDisplay');
+            const balanceAmountEl = document.getElementById('balanceAmount');
+            const levelDisplayEl = document.getElementById('levelDisplay');
+            const xpDisplayEl = document.getElementById('xpDisplay');
+            const levelInfo = document.getElementById('levelInfo');
+            const hintEl = document.getElementById('hint');
+            const instructionModal = document.getElementById('instructionModal');
+            const difficultyModal = document.getElementById('difficultyModal');
+            const sizeModal = document.getElementById('sizeModal');
+            const shopModal = document.getElementById('shopModal');
+            const resultModal = document.getElementById('resultModal');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const resultBtn = document.getElementById('resultBtn');
+            const toastEl = document.getElementById('toast');
+            const shopItems = document.getElementById('shopItems');
+            const sizeError = document.getElementById('sizeError');
+            const inputWidth = document.getElementById('inputWidth');
+            const inputHeight = document.getElementById('inputHeight');
+            const cheatModal = document.getElementById('cheatModal');
+            const cheatBtn = document.getElementById('cheatBtn');
+            const exitThemeBtn = document.getElementById('exitThemeBtn');
+            const leavesContainer = document.getElementById('leavesContainer');
+            const continueBtn = document.getElementById('continueBtn');
+            const settingsModal = document.getElementById('settingsModal');
+            const profileModal = document.getElementById('profileModal');
+            const modesModal = document.getElementById('modesModal');
+            const leaderboardModal = document.getElementById('leaderboardModal');
+            const friendsModal = document.getElementById('friendsModal');
+            const rouletteModal = document.getElementById('rouletteModal');
+            const profileBtn = document.getElementById('profileBtn');
+            const profileAvatar = document.getElementById('profileAvatar');
+            const profileName = document.getElementById('profileName');
+            const profileAvatarBig = document.getElementById('profileAvatarBig');
+            const profileNameBig = document.getElementById('profileNameBig');
+            const profileUsername = document.getElementById('profileUsername');
+            const profileLevel = document.getElementById('profileLevel');
+            const profileWins = document.getElementById('profileWins');
+            const profileLosses = document.getElementById('profileLosses');
+            const profileWinRate = document.getElementById('profileWinRate');
+            const achievementsListEl = document.getElementById('achievementsList');
+            const langSelect = document.getElementById('langSelect');
+            const soundToggle = document.getElementById('soundToggle');
+            const soundLabel = document.getElementById('soundLabel');
+            const promoInput = document.getElementById('promoInput');
+            const applyPromoBtn = document.getElementById('applyPromoBtn');
+            const leaderboardContainer = document.getElementById('leaderboardContainer');
+            const friendsList = document.getElementById('friendsList');
+            const friendIdInput = document.getElementById('friendIdInput');
+            const sendFriendRequestBtn = document.getElementById('sendFriendRequestBtn');
+            const singlePlayerModeBtn = document.getElementById('singlePlayerModeBtn');
+            const multiplayerModeBtn = document.getElementById('multiplayerModeBtn');
+            const versionFooter = document.getElementById('versionFooter');
+            const konamiProgress = document.getElementById('konamiProgress');
+            const myTelegramIdEl = document.getElementById('myTelegramId');
+            const incomingRequests = document.getElementById('incomingRequests');
+
+            // ========== ПЕРЕМЕННЫЕ ==========
+            let rows = state.size.h;
+            let cols = state.size.w;
+            let minesCount = 0;
+            let board = [];
+            let gameOver = false;
+            let gameStarted = false;
+            let minesPlaced = false;
+            let seconds = 0;
+            let timerInterval = null;
+            let flagsCount = 0;
+            let revealedSafeCount = 0;
+            let hintInterval = null;
+            let highlightMinesActive = false;
+            let keyBuffer = [];
+            let soundEnabled = state.sound;
+            let audioCtx = null;
+            let konamiBuffer = [];
+            let versionClicks = 0;
+            let selectedBooster = null;
+            let applySizeLock = false;
+            let gameMode = 'single';
+            let currentPlayer = 1;
+            let pvpClickCount = 0;
+            const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
+            const boosterIcons = document.querySelectorAll('.booster-icon');
+            // ========== ФУНКЦИИ ==========
+            function t(key) { return translations[state.lang][key] || key; }
+            function updateBalance() { balanceAmountEl.textContent = state.balance; }
+            function updateLevel() { levelDisplayEl.textContent = state.level; xpDisplayEl.textContent = state.xp + ' XP'; }
+            function updateBoosterUI() {
+                document.querySelector('#booster-safe .booster-count').textContent = state.boosters.safe_cell || 0;
+                document.querySelector('#booster-freeze .booster-count').textContent = state.boosters.freeze_time || 0;
+                document.querySelector('#booster-hint .booster-count').textContent = state.boosters.hint_zone || 0;
+            }
+            function updateProfileUI() {
+                profileAvatar.textContent = state.profile.avatar;
+                profileName.textContent = state.profile.nickname || firstName;
+                profileAvatarBig.textContent = avatarUrl ? '' : state.profile.avatar;
+                profileNameBig.textContent = state.profile.nickname || firstName;
+                profileUsername.textContent = '@' + (username || 'username');
+                profileLevel.textContent = state.level;
+                if (avatarUrl && profileAvatarBig) {
+                    profileAvatarBig.innerHTML = `<img src="${avatarUrl}" alt="avatar">`;
+                }
+            }
+            function applyTheme(themeId) {
+                const theme = themes.find(th => th.id === themeId);
+                if (!theme) return;
+                document.body.style.backgroundImage = theme.gradient;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.classList.remove('pvp-player1', 'pvp-player2');
+                updateExitThemeButton();
+                updateLeaves();
+            }
+            function updateLeaves() {
+                if (state.selectedTheme === 'yinyang') {
+                    leavesContainer.style.display = 'block';
+                    startLeaves();
+                } else {
+                    leavesContainer.style.display = 'none';
+                    leavesContainer.innerHTML = '';
+                }
+            }
+            function startLeaves() {
+                leavesContainer.innerHTML = '';
+                const leafEmojis = ['🍁', '🍂', '🍃', '🌿'];
+                for (let i = 0; i < 20; i++) {
+                    const leaf = document.createElement('div');
+                    leaf.className = 'leaf';
+                    leaf.textContent = leafEmojis[Math.floor(Math.random() * leafEmojis.length)];
+                    leaf.style.left = Math.random() * 100 + '%';
+                    leaf.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                    leaf.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                    leaf.style.animationDelay = Math.random() * 10 + 's';
+                    leavesContainer.appendChild(leaf);
+                }
+            }
+            function getMineIcon() { const skin = skins.find(s => s.id === state.selectedSkin); return skin ? skin.icon : '💣'; }
+            function getMinePercent() { return [10, 15, 20, 25, 30][state.difficulty - 1] || 15; }
+            function calculateMinesCount() { const total = rows * cols; let mines = Math.round(total * getMinePercent() / 100); if (mines < 1) mines = 1; if (mines > total - 1) mines = total - 1; return mines; }
+            function formatTime(sec) { const m = Math.floor(sec / 60).toString().padStart(2, '0'); const s = (sec % 60).toString().padStart(2, '0'); return `${m}:${s}`; }
+            function updateMineCounter() { mineCounterEl.textContent = minesCount - flagsCount; }
+            function updateTimer() { timerDisplayEl.textContent = formatTime(seconds); }
+            function startTimer() { if (timerInterval) clearInterval(timerInterval); seconds = 0; updateTimer(); timerInterval = setInterval(() => { seconds++; updateTimer(); }, 1000); }
+            function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+            function showToast(msg, type = 'info') { toastEl.textContent = msg; toastEl.className = 'toast show ' + type; setTimeout(() => toastEl.classList.remove('show'), 2200); }
+            function openModal(modal) { modal.classList.add('active'); }
+            function closeModal(modal) { modal.classList.remove('active'); }
+            function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+            function totalWins() { return Object.values(state.statistics).reduce((sum, s) => sum + s.wins, 0); }
+            function totalLosses() { return Object.values(state.statistics).reduce((sum, s) => sum + s.losses, 0); }
+            function totalGames() { return Object.values(state.statistics).reduce((sum, s) => sum + (s.wins + s.losses), 0); }
+            
+            function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            function playSound(type) {
+                if (!soundEnabled) return;
+                try {
+                    initAudio();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    gain.gain.value = 0.1;
+                    osc.type = 'sine';
+                    if (type === 'click') { osc.frequency.value = 800; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+                    else if (type === 'flag') { osc.frequency.value = 1200; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15); }
+                    else if (type === 'win') { osc.frequency.value = 1000; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+                    else if (type === 'lose') { osc.frequency.value = 300; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); }
+                } catch (e) {}
+            }
+            
+            function addXP(amount) {
+                state.xp += amount;
+                const needed = state.level * 100;
+                if (state.xp >= needed) {
+                    state.xp -= needed;
+                    state.level++;
+                    showToast(t('levelUp') + ' ' + state.level, 'success');
+                }
+                updateLevel();
+            }
+            
+            function checkAchievements() {
+                achievementsList.forEach(ach => {
+                    if (!state.achievements.includes(ach.id) && ach.check()) {
+                        state.achievements.push(ach.id);
+                        showToast(t('achievementUnlocked') + ': ' + ach.name[state.lang], 'success');
+                        playSound('win');
+                    }
+                });
+                saveState();
+            }
+            
+            function renderAchievements() {
+                achievementsListEl.innerHTML = '';
+                achievementsList.forEach(ach => {
+                    const unlocked = state.achievements.includes(ach.id);
+                    const item = document.createElement('div');
+                    item.className = 'achievement-item';
+                    item.style.opacity = unlocked ? '1' : '0.5';
+                    item.innerHTML = `
+                        <span class="achievement-icon">${unlocked ? ach.icon : '🔒'}</span>
+                        <div>
+                            <div class="achievement-name">${ach.name[state.lang]}</div>
+                            <div class="achievement-progress">${unlocked ? '✅' : ach.desc[state.lang]}</div>
+                        </div>
+                    `;
+                    achievementsListEl.appendChild(item);
+                });
+            }
+
+            // ========== СТАТИСТИКА ==========
+            function updateStatistics(won, time, flags) {
+                const key = `${state.difficulty}_${state.size.w}x${state.size.h}`;
+                if (!state.statistics[key]) state.statistics[key] = { wins: 0, losses: 0, bestTime: null };
+                if (won) {
+                    state.statistics[key].wins++;
+                    if (!state.statistics[key].bestTime || time < state.statistics[key].bestTime) state.statistics[key].bestTime = time;
+                } else {
+                    state.statistics[key].losses++;
+                }
+                state.lastGames.unshift({ won, difficulty: state.difficulty, size: `${state.size.w}x${state.size.h}`, time, flags, date: new Date().toISOString() });
+                if (state.lastGames.length > 10) state.lastGames.pop();
+                addXP(won ? state.difficulty * 10 : 2);
+                checkAchievements();
+                saveState();
+            }
+
+            // ========== БУСТЕРЫ ==========
+            function useBooster(id) {
+                if (!state.boosters[id] || state.boosters[id] <= 0) return false;
+                state.boosters[id]--;
+                state.boosterUses++;
+                saveState();
+                updateBoosterUI();
+                return true;
+            }
+            function safeCell() {
+                if (!useBooster('safe_cell')) { showToast(t('notEnough'), 'error'); return; }
+                let safeCells = [];
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].mine && !board[r][c].revealed && !board[r][c].flagged) safeCells.push([r, c]);
+                if (safeCells.length === 0) return;
+                const [r, c] = safeCells[Math.floor(Math.random() * safeCells.length)];
+                if (!gameStarted) { gameStarted = true; startTimer(); if (!minesPlaced) placeMines(r, c); }
+                revealCell(r, c);
+            }
+            function freezeTime() {
+                if (!useBooster('freeze_time')) { showToast(t('notEnough'), 'error'); return; }
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    showToast('⏸️ 10s', 'info');
+                    setTimeout(() => { if (gameStarted && !gameOver) startTimer(); }, 10000);
+                }
+            }
+            function hintZone() {
+                if (!useBooster('hint_zone')) { showToast(t('notEnough'), 'error'); return; }
+                let candidates = [];
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].mine && !board[r][c].revealed && board[r][c].neighborMines === 0) candidates.push([r, c]);
+                if (candidates.length === 0) return;
+                const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+                if (!gameStarted) { gameStarted = true; startTimer(); if (!minesPlaced) placeMines(r, c); }
+                revealCell(r, c);
+            }
+            
+            boosterIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const boosterId = icon.dataset.booster;
+                    if (selectedBooster === boosterId) {
+                        selectedBooster = null;
+                        icon.classList.remove('active');
+                    } else {
+                        if (selectedBooster) document.querySelector(`.booster-icon[data-booster="${selectedBooster}"]`).classList.remove('active');
+                        selectedBooster = boosterId;
+                        icon.classList.add('active');
+                    }
+                });
+            });
+
             // ========== СОХРАНЕНИЕ ==========
-            function saveCurrentGame(){const gameState={rows,cols,board,minesCount,flagsCount,revealedSafeCount,seconds,gameStarted,minesPlaced,gameOver};try{localStorage.setItem('insik_current_game',JSON.stringify(gameState))}catch(e){}}
-            function loadCurrentGame(){try{const saved=localStorage.getItem('insik_current_game');if(saved){const gameState=JSON.parse(saved);rows=gameState.rows;cols=gameState.cols;board=gameState.board;minesCount=gameState.minesCount;flagsCount=gameState.flagsCount;revealedSafeCount=gameState.revealedSafeCount;seconds=gameState.seconds;gameStarted=gameState.gameStarted;minesPlaced=gameState.minesPlaced;gameOver=gameState.gameOver;renderBoard();for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)updateCell(r,c);updateMineCounter();updateTimer();if(gameStarted&&!gameOver)startTimer();continueBtn.style.display='none';return true}}catch(e){}return false}
-            continueBtn.addEventListener('click',()=>{if(loadCurrentGame())showToast('Игра продолжена','success')});
-            
+            function saveCurrentGame() {
+                const gameState = { rows, cols, board, minesCount, flagsCount, revealedSafeCount, seconds, gameStarted, minesPlaced, gameOver };
+                try { localStorage.setItem('insik_current_game', JSON.stringify(gameState)); } catch (e) {}
+            }
+            function loadCurrentGame() {
+                try {
+                    const saved = localStorage.getItem('insik_current_game');
+                    if (saved) {
+                        const gameState = JSON.parse(saved);
+                        rows = gameState.rows; cols = gameState.cols; board = gameState.board; minesCount = gameState.minesCount; flagsCount = gameState.flagsCount;
+                        revealedSafeCount = gameState.revealedSafeCount; seconds = gameState.seconds; gameStarted = gameState.gameStarted; minesPlaced = gameState.minesPlaced; gameOver = gameState.gameOver;
+                        renderBoard();
+                        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) updateCell(r, c);
+                        updateMineCounter(); updateTimer();
+                        if (gameStarted && !gameOver) startTimer();
+                        continueBtn.style.display = 'none';
+                        return true;
+                    }
+                } catch (e) {}
+                return false;
+            }
+            continueBtn.addEventListener('click', () => { if (loadCurrentGame()) showToast('✅', 'success'); });
+
             // ========== ИГРОВАЯ ЛОГИКА ==========
-            function createEmptyBoard(){board=[];for(let r=0;r<rows;r++){board[r]=[];for(let c=0;c<cols;c++)board[r][c]={mine:false,revealed:false,flagged:false,neighborMines:0}}}
-            function placeMines(excludeR,excludeC){minesCount=calculateMinesCount();let placed=0;while(placed<minesCount){const r=Math.floor(Math.random()*rows),c=Math.floor(Math.random()*cols);if(r===excludeR&&c===excludeC)continue;if(board[r][c].mine)continue;board[r][c].mine=true;placed++}computeNeighborMines();minesPlaced=true;if(highlightMinesActive)updateMinesHighlight()}
-            function computeNeighborMines(){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(board[r][c].mine)continue;let count=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(dr===0&&dc===0)continue;const nr=r+dr,nc=c+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&board[nr][nc].mine)count++}board[r][c].neighborMines=count}}
-            function getCellEl(r,c){return boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`)}
-            function updateCell(r,c){const el=getCellEl(r,c);if(!el)return;const cell=board[r][c];if(cell.revealed){el.classList.add('revealed');if(cell.mine){el.classList.add('mine');el.textContent=getMineIcon()}else if(cell.neighborMines>0){el.textContent=cell.neighborMines;el.classList.add('num-'+cell.neighborMines)}else el.textContent=''}else{if(cell.flagged){el.classList.add('flagged');el.textContent='🚩'}else{el.classList.remove('flagged');el.textContent=''}}if(highlightMinesActive&&cell.mine&&!el.classList.contains('show-mine'))el.classList.add('show-mine')}
-            function revealCell(r,c){if(gameOver)return;if(r<0||r>=rows||c<0||c>=cols)return;const cell=board[r][c];if(cell.revealed||cell.flagged)return;if(cell.mine){gameOver=true;revealAllMines(r,c);stopTimer();playSound('lose');if(gameMode==='pvp'){const winner=currentPlayer===1?2:1;showPvpResult(winner)}else{updateStatistics(false,seconds,flagsCount);setTimeout(()=>showResult(false),1500)}return}const stack=[[r,c]];while(stack.length){const[cr,cc]=stack.pop();const cur=board[cr][cc];if(cur.revealed||cur.flagged||cur.mine)continue;cur.revealed=true;revealedSafeCount++;updateCell(cr,cc);playSound('click');if(cur.neighborMines===0){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(dr===0&&dc===0)continue;const nr=cr+dr,nc=cc+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols){const neighbor=board[nr][nc];if(!neighbor.revealed&&!neighbor.flagged&&!neighbor.mine)stack.push([nr,nc])}}}}if(checkWin())return;if(gameMode==='pvp'&&!gameOver){currentPlayer=currentPlayer===1?2:1;updatePvpBackground();updatePvpIndicator()}saveCurrentGame()}
-            function revealAllMines(clickedR,clickedC){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(board[r][c].mine){board[r][c].revealed=true;const el=getCellEl(r,c);if(el){el.classList.add('revealed','mine');el.textContent=getMineIcon();if(r===clickedR&&c===clickedC)el.classList.add('exploded')}}}}
-            function autoFlagMines(){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(board[r][c].mine&&!board[r][c].flagged){board[r][c].flagged=true;flagsCount++;const el=getCellEl(r,c);if(el){el.classList.add('flagged');el.textContent='🚩'}}updateMineCounter()}
-            function checkWin(){if(gameOver)return false;if(revealedSafeCount===rows*cols-minesCount){autoFlagMines();gameOver=true;stopTimer();if(gameMode==='pvp'){showPvpResult(currentPlayer)}else{const reward=10+state.difficulty*5;state.balance+=reward;updateStatistics(true,seconds,flagsCount);saveState();updateBalance();playSound('win');showResult(true,reward)}return true}return false}
-            function toggleFlag(r,c){if(gameOver)return;const cell=board[r][c];if(cell.revealed)return;if(cell.flagged){cell.flagged=false;flagsCount--;updateCell(r,c)}else{if(flagsCount>=minesCount&&minesPlaced)return;cell.flagged=true;flagsCount++;updateCell(r,c)}updateMineCounter();playSound('flag');saveCurrentGame()}
-            function showResult(won,reward=0){if(gameMode==='pvp')return;if(won){resultTitle.textContent=t('winTitle');resultMessage.innerHTML=`${t('winMsg')}: <b>🪙 ${reward}</b>`;resultBtn.textContent=t('playAgain')}else{resultTitle.textContent=t('loseTitle');resultMessage.textContent=t('loseMsg');resultBtn.textContent=t('newGame')}openModal(resultModal);saveCurrentGame()}
-            function initGame(){stopTimer();rows=state.size.h;cols=state.size.w;minesCount=calculateMinesCount();flagsCount=0;revealedSafeCount=0;gameOver=false;gameStarted=false;minesPlaced=false;createEmptyBoard();renderBoard();updateMineCounter();updateTimer();closeModal(resultModal);if(highlightMinesActive)clearMinesHighlight();continueBtn.style.display='none';localStorage.removeItem('insik_current_game');if(gameMode==='pvp'){currentPlayer=1;updatePvpBackground();updatePvpIndicator()}setTimeout(()=>setCellSize(),0)}
-            function renderBoard(){boardEl.innerHTML='';boardEl.style.gridTemplateColumns=`repeat(${cols},var(--cell-size))`;boardEl.style.gridTemplateRows=`repeat(${rows},var(--cell-size))`;const fragment=document.createDocumentFragment();for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const cell=document.createElement('div');cell.className='cell';cell.dataset.r=r;cell.dataset.c=c;fragment.appendChild(cell)}boardEl.appendChild(fragment);setCellSize()}
-            function setCellSize(){const wrapperWidth=boardWrapper.clientWidth-24;const wrapperHeight=boardWrapper.clientHeight-24;const maxWidth=Math.min(wrapperWidth,window.innerWidth*.9);const maxHeight=Math.min(wrapperHeight,window.innerHeight*.55);let cellSize=Math.floor(Math.min(maxWidth/cols,maxHeight/rows));if(cellSize<18)cellSize=18;if(cellSize>60)cellSize=60;document.documentElement.style.setProperty('--cell-size',cellSize+'px');boardEl.style.gridTemplateColumns=`repeat(${cols},${cellSize}px)`;boardEl.style.gridTemplateRows=`repeat(${rows},${cellSize}px)`}
-            
+            function createEmptyBoard() {
+                board = [];
+                for (let r = 0; r < rows; r++) { board[r] = []; for (let c = 0; c < cols; c++) board[r][c] = { mine: false, revealed: false, flagged: false, neighborMines: 0 }; }
+            }
+            function placeMines(excludeR, excludeC) {
+                minesCount = calculateMinesCount();
+                let placed = 0;
+                while (placed < minesCount) {
+                    const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
+                    if (r === excludeR && c === excludeC) continue;
+                    if (board[r][c].mine) continue;
+                    board[r][c].mine = true; placed++;
+                }
+                computeNeighborMines();
+                minesPlaced = true;
+                if (highlightMinesActive) updateMinesHighlight();
+            }
+            function computeNeighborMines() {
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    if (board[r][c].mine) continue;
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        const nr = r + dr, nc = c + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].mine) count++;
+                    }
+                    board[r][c].neighborMines = count;
+                }
+            }
+            function getCellEl(r, c) { return boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+            function updateCell(r, c) {
+                const el = getCellEl(r, c); if (!el) return;
+                const cell = board[r][c];
+                if (cell.revealed) {
+                    el.classList.add('revealed');
+                    if (cell.mine) { el.classList.add('mine'); el.textContent = getMineIcon(); }
+                    else if (cell.neighborMines > 0) { el.textContent = cell.neighborMines; el.classList.add('num-' + cell.neighborMines); }
+                    else el.textContent = '';
+                } else {
+                    if (cell.flagged) { el.classList.add('flagged'); el.textContent = '🚩'; }
+                    else { el.classList.remove('flagged'); el.textContent = ''; }
+                }
+                if (highlightMinesActive && cell.mine && !el.classList.contains('show-mine')) el.classList.add('show-mine');
+            }
+            function revealCell(r, c) {
+                if (gameOver) return;
+                if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+                const cell = board[r][c];
+                if (cell.revealed || cell.flagged) return;
+                if (cell.mine) {
+                    gameOver = true; revealAllMines(r, c); stopTimer();
+                    playSound('lose');
+                    updateStatistics(false, seconds, flagsCount);
+                    updateGameStats(false, seconds);
+                    setTimeout(() => showResult(false), 1500);
+                    return;
+                }
+                const stack = [[r, c]];
+                while (stack.length) {
+                    const [cr, cc] = stack.pop();
+                    const cur = board[cr][cc];
+                    if (cur.revealed || cur.flagged || cur.mine) continue;
+                    cur.revealed = true; revealedSafeCount++;
+                    updateCell(cr, cc);
+                    playSound('click');
+                    if (cur.neighborMines === 0) {
+                        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            const nr = cr + dr, nc = cc + dc;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                                const neighbor = board[nr][nc];
+                                if (!neighbor.revealed && !neighbor.flagged && !neighbor.mine) stack.push([nr, nc]);
+                            }
+                        }
+                    }
+                }
+                if (checkWin()) return;
+                saveCurrentGame();
+            }
+            function revealAllMines(clickedR, clickedC) {
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    if (board[r][c].mine) {
+                        board[r][c].revealed = true;
+                        const el = getCellEl(r, c);
+                        if (el) { el.classList.add('revealed', 'mine'); el.textContent = getMineIcon(); if (r === clickedR && c === clickedC) el.classList.add('exploded'); }
+                    }
+                }
+            }
+            function autoFlagMines() {
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (board[r][c].mine && !board[r][c].flagged) {
+                    board[r][c].flagged = true; flagsCount++;
+                    const el = getCellEl(r, c); if (el) { el.classList.add('flagged'); el.textContent = '🚩'; }
+                }
+                updateMineCounter();
+            }
+            function checkWin() {
+                if (gameOver) return false;
+                if (revealedSafeCount === rows * cols - minesCount) {
+                    autoFlagMines(); gameOver = true; stopTimer();
+                    const reward = 10 + state.difficulty * 5;
+                    state.balance += reward;
+                    updateStatistics(true, seconds, flagsCount);
+                    updateGameStats(true, seconds);
+                    saveState(); updateBalance();
+                    playSound('win');
+                    showResult(true, reward);
+                    return true;
+                }
+                return false;
+            }
+            function toggleFlag(r, c) {
+                if (gameOver) return;
+                const cell = board[r][c];
+                if (cell.revealed) return;
+                if (cell.flagged) { cell.flagged = false; flagsCount--; updateCell(r, c); }
+                else { if (flagsCount >= minesCount && minesPlaced) return; cell.flagged = true; flagsCount++; updateCell(r, c); }
+                updateMineCounter();
+                playSound('flag');
+                saveCurrentGame();
+            }
+            function showResult(won, reward = 0) {
+                if (won) { resultTitle.textContent = t('winTitle'); resultMessage.innerHTML = `${t('winMsg')}: <b>🪙 ${reward}</b>`; resultBtn.textContent = t('playAgain'); }
+                else { resultTitle.textContent = t('loseTitle'); resultMessage.textContent = t('loseMsg'); resultBtn.textContent = t('newGame'); }
+                openModal(resultModal);
+            }
+            function initGame() {
+                stopTimer(); rows = state.size.h; cols = state.size.w; minesCount = calculateMinesCount(); flagsCount = 0; revealedSafeCount = 0; gameOver = false; gameStarted = false; minesPlaced = false;
+                createEmptyBoard(); renderBoard(); updateMineCounter(); updateTimer(); closeModal(resultModal);
+                if (highlightMinesActive) clearMinesHighlight();
+                continueBtn.style.display = 'none';
+                localStorage.removeItem('insik_current_game');
+                setTimeout(() => setCellSize(), 0);
+            }
+            function renderBoard() {
+                boardEl.innerHTML = '';
+                boardEl.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+                boardEl.style.gridTemplateRows = `repeat(${rows}, var(--cell-size))`;
+                const fragment = document.createDocumentFragment();
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div'); cell.className = 'cell'; cell.dataset.r = r; cell.dataset.c = c; fragment.appendChild(cell);
+                }
+                boardEl.appendChild(fragment); setCellSize();
+            }
+            function setCellSize() {
+                const wrapperWidth = boardWrapper.clientWidth - 24;
+                const maxWidth = Math.min(wrapperWidth, window.innerWidth * 0.9);
+                const maxHeight = Math.min(window.innerHeight * 0.5, 500);
+                let cellSize = Math.floor(Math.min(maxWidth / cols, maxHeight / rows));
+                if (cellSize < 18) cellSize = 18;
+                if (cellSize > 60) cellSize = 60;
+                document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+                boardEl.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+                boardEl.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+            }
+            // ========== FIREBASE ФУНКЦИИ ==========
+            async function getOrCreateUserProfile() {
+                if (!telegramId || !db) return;
+                try {
+                    const userRef = db.collection('users').doc(String(telegramId));
+                    const doc = await userRef.get();
+                    if (!doc.exists) {
+                        await userRef.set({
+                            telegramId, firstName, lastName, username,
+                            balance: 100,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        await userRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
+                    }
+                } catch (e) { console.log('Firebase profile error:', e); }
+            }
+
+            async function updateGameStats(won, timeTaken) {
+                if (!telegramId || !db) return;
+                try {
+                    const statsRef = db.collection('game_stats').doc(String(telegramId));
+                    const doc = await statsRef.get();
+                    if (!doc.exists) {
+                        await statsRef.set({ wins: won ? 1 : 0, losses: won ? 0 : 1, totalGames: 1, bestTime: timeTaken, totalTimePlayed: timeTaken });
+                    } else {
+                        const data = doc.data();
+                        await statsRef.update({
+                            wins: data.wins + (won ? 1 : 0),
+                            losses: data.losses + (won ? 0 : 1),
+                            totalGames: data.totalGames + 1,
+                            bestTime: Math.min(data.bestTime || timeTaken, timeTaken),
+                            totalTimePlayed: data.totalTimePlayed + timeTaken
+                        });
+                    }
+                } catch (e) { console.log('Firebase stats error:', e); }
+            }
+
+            async function getLeaderboard() {
+                if (!db) return [];
+                const snapshot = await db.collection('game_stats').orderBy('wins', 'desc').limit(10).get();
+                const leaders = [];
+                snapshot.forEach(doc => leaders.push({ telegramId: doc.id, ...doc.data() }));
+                return leaders;
+            }
+
+            async function showLeaderboard() {
+                const leaders = await getLeaderboard();
+                let html = '';
+                if (leaders.length === 0) {
+                    html = `<p style="text-align:center;opacity:.7;">${t('noOpponents')}</p>`;
+                } else {
+                    html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                    for (let i = 0; i < 10; i++) {
+                        if (i < leaders.length) {
+                            const player = leaders[i];
+                            const userDoc = await db.collection('users').doc(player.telegramId).get();
+                            const name = userDoc.exists ? userDoc.data().firstName : 'Игрок';
+                            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                            html += `<div class="stat-row"><span>${medal} ${name}</span><span class="stat-value">${player.wins} ${t('wins')}</span></div>`;
+                        } else {
+                            html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
+                        }
+                    }
+                    html += '</div>';
+                }
+                leaderboardContainer.innerHTML = html;
+                openModal(leaderboardModal);
+            }
+
+            async function sendFriendRequest(toTelegramId) {
+                if (!telegramId || !db) return;
+                if (telegramId === toTelegramId) { showToast('Нельзя добавить самого себя', 'error'); return; }
+                try {
+                    const requestId = `${Math.min(telegramId, toTelegramId)}_${Math.max(telegramId, toTelegramId)}`;
+                    await db.collection('friendRequests').doc(requestId).set({
+                        from: telegramId, to: toTelegramId, status: 'pending',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showToast('Запрос отправлен', 'success');
+                } catch (e) { console.log('Friend request error:', e); }
+            }
+
+            async function getFriends() {
+                if (!telegramId || !db) return [];
+                try {
+                    const friendsSnapshot = await db.collection('users').doc(String(telegramId)).collection('friends').get();
+                    const friends = [];
+                    for (const doc of friendsSnapshot.docs) {
+                        const friendId = doc.data().friendId;
+                        const friendProfile = await db.collection('users').doc(String(friendId)).get();
+                        if (friendProfile.exists) friends.push({ id: friendId, ...friendProfile.data() });
+                    }
+                    return friends;
+                } catch (e) { return []; }
+            }
+
+            async function showFriends() {
+                if (myTelegramIdEl) myTelegramIdEl.textContent = telegramId;
+                const friends = await getFriends();
+                let html = '';
+                if (friends.length === 0) {
+                    html = `<p style="text-align:center;opacity:.7;">${t('noFriends')}</p>`;
+                } else {
+                    friends.forEach(f => {
+                        html += `<div class="stat-row"><span>${f.firstName || 'Игрок'}</span><span class="stat-value">ID: ${f.id}</span></div>`;
+                    });
+                }
+                friendsList.innerHTML = html;
+                await showIncomingRequests();
+                openModal(friendsModal);
+            }
+
+            async function showIncomingRequests() {
+                if (!db || !telegramId) { incomingRequests.innerHTML = ''; return; }
+                try {
+                    const snapshot = await db.collection('friendRequests')
+                        .where('to', '==', telegramId)
+                        .where('status', '==', 'pending')
+                        .get();
+                    let html = '';
+                    if (!snapshot.empty) {
+                        html = '<h3 style="margin-bottom:10px;">' + t('incomingRequests') + ':</h3>';
+                        snapshot.forEach(doc => {
+                            const req = doc.data();
+                            html += `
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:8px;">
+                                    <span>ID: ${req.from}</span>
+                                    <div style="display:flex;gap:8px;">
+                                        <button class="btn" style="padding:6px 12px;font-size:.8rem;background:rgba(76,175,80,.3);" onclick="acceptFriend('${doc.id}', ${req.from}, ${req.to})">✅</button>
+                                        <button class="btn" style="padding:6px 12px;font-size:.8rem;background:rgba(244,67,54,.3);" onclick="declineFriend('${doc.id}')">❌</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    incomingRequests.innerHTML = html;
+                } catch (e) { incomingRequests.innerHTML = ''; }
+            }
+
+            window.acceptFriend = async function(requestId, fromId, toId) {
+                try {
+                    await db.collection('friendRequests').doc(requestId).update({ status: 'accepted' });
+                    await db.collection('users').doc(String(fromId)).collection('friends').doc(String(toId)).set({ friendId: toId });
+                    await db.collection('users').doc(String(toId)).collection('friends').doc(String(fromId)).set({ friendId: fromId });
+                    state.friendsAdded++;
+                    saveState();
+                    showToast('Друг добавлен!', 'success');
+                    showFriends();
+                } catch (e) { console.log(e); }
+            };
+
+            window.declineFriend = async function(requestId) {
+                try {
+                    await db.collection('friendRequests').doc(requestId).update({ status: 'declined' });
+                    showToast('Заявка отклонена', 'info');
+                    showFriends();
+                } catch (e) { console.log(e); }
+            };
+
             // ========== ЧИТ ==========
-            function showCheatButton(){cheatBtn.style.display='inline-block'}
-            function updateMinesHighlight(){if(!highlightMinesActive)return;document.querySelectorAll('.cell').forEach(cellEl=>{const r=parseInt(cellEl.dataset.r);const c=parseInt(cellEl.dataset.c);if(board[r]&&board[r][c]&&board[r][c].mine)cellEl.classList.add('show-mine')})}
-            function clearMinesHighlight(){document.querySelectorAll('.cell.show-mine').forEach(el=>el.classList.remove('show-mine'))}
-            function boomEffect(){const overlay=document.createElement('div');overlay.className='boom-overlay';document.body.appendChild(overlay);setTimeout(()=>{overlay.innerHTML='';const report=document.createElement('div');report.className='boom-report';report.innerHTML=`<svg class="boom-ring" width="320" height="320" viewBox="0 0 320 320"><circle cx="160" cy="160" r="140" fill="none" stroke="#ff0000" stroke-width="8"/></svg><h2>${t('technicalIssues')}</h2><p>${t('errorReport')}</p><p>${t('errorCode')}</p><p>${new Date().toLocaleTimeString()}</p><p>${t('wait')}</p>`;overlay.appendChild(report)},1500);setTimeout(()=>{if(overlay.parentNode)overlay.parentNode.removeChild(overlay)},1500+15000)}
-            function autoWin(){if(gameOver)return;if(!minesPlaced){gameStarted=true;startTimer();placeMines(0,0)}for(let r=0;r<rows;r++){for(let c=0;c<cols;c++){if(!board[r][c].mine&&!board[r][c].revealed){board[r][c].revealed=true;revealedSafeCount++;updateCell(r,c)}}}autoFlagMines();gameOver=true;stopTimer();const reward=10+state.difficulty*5;state.balance+=reward;updateStatistics(true,seconds,flagsCount);saveState();updateBalance();showResult(true,reward);closeModal(cheatModal)}
-            function fullReset(){state={...defaultState,ownedThemes:[...defaultState.ownedThemes],ownedSkins:[...defaultState.ownedSkins],statistics:{},boosters:{},achievements:[],lastGames:[],bestTime:{},profile:{nickname:'',avatar:'😊'},lastBonusTimes:{}};saveState();applyTheme(state.selectedTheme);applyLanguage();updateBalance();updateLevel();updateBoosterUI();updateProfileUI();initGame();closeModal(cheatModal);showToast('Полный сброс выполнен','info')}
-            
-            // ========== PVP ==========
-            function updatePvpBackground(){document.body.classList.remove('pvp-player1','pvp-player2');document.body.style.backgroundImage='';if(gameMode==='pvp'){document.body.classList.add(currentPlayer===1?'pvp-player1':'pvp-player2')}}
-            function updatePvpIndicator(){if(pvpIndicator){pvpIndicator.textContent=`Ход: Игрок ${currentPlayer}`;pvpIndicator.style.display='inline-block'}}
-            function showPvpResult(winner){resultTitle.textContent='Игра окончена!';resultMessage.textContent=`Победил Игрок ${winner}!`;resultBtn.textContent='Новая игра';openModal(resultModal)}
-            
-            // ========== KONAMI ==========
-            function resetKonami(){konamiBuffer=[];konamiProgress.innerHTML='';konamiProgress.classList.remove('error')}
-            function showKonamiError(){konamiProgress.classList.add('error');setTimeout(()=>{resetKonami()},500)}
-            function handleKonamiKey(e){const key=e.key;if(key.startsWith('Arrow')){if(konamiBuffer.length===0&&key!=='ArrowUp')return;if(konamiSequence[konamiBuffer.length]===key){konamiBuffer.push(key);const arrowSymbols={ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→'};konamiProgress.innerHTML+=arrowSymbols[key];if(konamiBuffer.length===konamiSequence.length){const now=Date.now();const last=state.lastBonusTimes['konami']||0;if(now-last<24*60*60*1000){const remaining=24*60*60*1000-(now-last);const hours=Math.floor(remaining/(60*60*1000));const mins=Math.floor((remaining%(60*60*1000))/(60*1000));showToast(`Konami Code можно использовать через ${hours}ч ${mins}м`,'error');resetKonami();return}state.lastBonusTimes['konami']=now;saveState();showToast('Konami Code активирован! Бонус: +1000 монет','success');state.balance+=1000;updateBalance();resetKonami()}}else{showKonamiError()}}else if(key!=='Shift'&&key!=='Control'&&key!=='Alt'){if(konamiBuffer.length>0)showKonamiError()}}
-            
+            function showCheatButton() { cheatBtn.style.display = 'inline-block'; }
+            function updateMinesHighlight() { if (!highlightMinesActive) return; document.querySelectorAll('.cell').forEach(cellEl => { const r = parseInt(cellEl.dataset.r); const c = parseInt(cellEl.dataset.c); if (board[r] && board[r][c] && board[r][c].mine) cellEl.classList.add('show-mine'); }); }
+            function clearMinesHighlight() { document.querySelectorAll('.cell.show-mine').forEach(el => el.classList.remove('show-mine')); }
+            function boomEffect() {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;display:flex;align-items:center;justify-content:center;';
+                document.body.appendChild(overlay);
+                setTimeout(() => {
+                    overlay.innerHTML = `<div style="width:320px;height:320px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;"><h2>Технические неполадки</h2><p>Код ошибки: 0x211224</p></div>`;
+                }, 1500);
+                setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 15000);
+            }
+            function autoWin() {
+                if (gameOver) return;
+                if (!minesPlaced) { gameStarted = true; startTimer(); placeMines(0, 0); }
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    if (!board[r][c].mine && !board[r][c].revealed) { board[r][c].revealed = true; revealedSafeCount++; updateCell(r, c); }
+                }
+                autoFlagMines(); gameOver = true; stopTimer();
+                const reward = 10 + state.difficulty * 5;
+                state.balance += reward; updateStatistics(true, seconds, flagsCount);
+                saveState(); updateBalance(); showResult(true, reward); closeModal(cheatModal);
+            }
+            function fullReset() {
+                state = { ...defaultState, ownedThemes: [...defaultState.ownedThemes], ownedSkins: [...defaultState.ownedSkins], statistics: {}, boosters: {}, achievements: [], lastGames: [], bestTime: {}, profile: { nickname: '', avatar: '😊' }, lastBonusTimes: {} };
+                saveState(); applyTheme(state.selectedTheme); applyLanguage();
+                updateBalance(); updateLevel(); updateBoosterUI(); updateProfileUI();
+                initGame(); closeModal(cheatModal); showToast('Сброс выполнен', 'info');
+            }
+
             // ========== ОБРАБОТЧИКИ ==========
-            boardEl.addEventListener('click',e=>{if(selectedBooster&&gameMode!=='pvp'){if(selectedBooster==='safe_cell')safeCell();else if(selectedBooster==='freeze_time')freezeTime();else if(selectedBooster==='hint_zone')hintZone();document.querySelectorAll('.booster-icon').forEach(ic=>ic.classList.remove('active'));selectedBooster=null;return}const cellEl=e.target.closest('.cell');if(!cellEl||gameOver)return;const r=+cellEl.dataset.r,c=+cellEl.dataset.c;const cell=board[r][c];if(cell.flagged||cell.revealed)return;if(!gameStarted){gameStarted=true;startTimer();if(!minesPlaced)placeMines(r,c)}revealCell(r,c)});
-            boardEl.addEventListener('contextmenu',e=>{e.preventDefault();const cellEl=e.target.closest('.cell');if(!cellEl||gameOver)return;const r=+cellEl.dataset.r,c=+cellEl.dataset.c;toggleFlag(r,c)});
+            boardEl.addEventListener('click', e => {
+                if (selectedBooster) {
+                    if (selectedBooster === 'safe_cell') safeCell();
+                    else if (selectedBooster === 'freeze_time') freezeTime();
+                    else if (selectedBooster === 'hint_zone') hintZone();
+                    document.querySelectorAll('.booster-icon').forEach(ic => ic.classList.remove('active'));
+                    selectedBooster = null;
+                    return;
+                }
+                const cellEl = e.target.closest('.cell');
+                if (!cellEl || gameOver) return;
+                const r = +cellEl.dataset.r, c = +cellEl.dataset.c;
+                const cell = board[r][c];
+                if (cell.flagged || cell.revealed) return;
+                if (!gameStarted) { gameStarted = true; startTimer(); if (!minesPlaced) placeMines(r, c); }
+                revealCell(r, c);
+            });
             
-            let longPressTimer=null,longPressTriggered=false;
-            boardEl.addEventListener('touchstart',e=>{const cellEl=e.target.closest('.cell');if(!cellEl)return;longPressTriggered=false;longPressTimer=setTimeout(()=>{const r=+cellEl.dataset.r,c=+cellEl.dataset.c;toggleFlag(r,c);longPressTriggered=true},500)});
-            boardEl.addEventListener('touchend',()=>{clearTimeout(longPressTimer);longPressTimer=null});
-            boardEl.addEventListener('touchmove',()=>{clearTimeout(longPressTimer);longPressTimer=null});
-            boardEl.addEventListener('click',e=>{if(longPressTriggered){e.preventDefault();e.stopPropagation();longPressTriggered=false}},true);
+            boardEl.addEventListener('contextmenu', e => {
+                e.preventDefault();
+                const cellEl = e.target.closest('.cell');
+                if (!cellEl || gameOver) return;
+                toggleFlag(+cellEl.dataset.r, +cellEl.dataset.c);
+            });
             
-            document.getElementById('restartBtn').addEventListener('click',initGame);
-            document.getElementById('difficultyBtn').addEventListener('click',()=>{updateDifficultyModal();openModal(difficultyModal)});
-            document.getElementById('sizeBtn').addEventListener('click',()=>{inputWidth.value=state.size.w;inputHeight.value=state.size.h;sizeError.textContent='';openModal(sizeModal)});
-            document.getElementById('instructionBtn').addEventListener('click',()=>{document.getElementById('instructionBody').innerHTML=t('instructionText');openModal(instructionModal)});
-            document.getElementById('shopBtn').addEventListener('click',()=>{renderShop();openModal(shopModal)});
-            statsBtn.addEventListener('click',()=>{renderStatistics();openModal(statsModal)});
-            document.getElementById('langToggle').addEventListener('click',()=>{state.lang=state.lang==='ru'?'en':'ru';saveState();applyLanguage();if(shopModal.classList.contains('active'))renderShop();if(instructionModal.classList.contains('active'))document.getElementById('instructionBody').innerHTML=t('instructionText');updateDifficultyModal()});
-            document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.modal-overlay').classList.remove('active')));
-            document.querySelectorAll('.modal-overlay').forEach(overlay=>overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('active')}));
-            document.querySelectorAll('.difficulty-btn').forEach(btn=>btn.addEventListener('click',()=>{state.difficulty=parseInt(btn.dataset.difficulty);saveState();closeModal(difficultyModal);initGame()}));
-            function updateDifficultyModal(){document.querySelectorAll('.difficulty-btn').forEach(btn=>btn.classList.toggle('selected',parseInt(btn.dataset.difficulty)===state.difficulty))}
-            document.getElementById('applySize').addEventListener('click',()=>{if(applySizeLock)return;applySizeLock=true;const w=parseInt(inputWidth.value),h=parseInt(inputHeight.value);if(isNaN(w)||isNaN(h)||w<5||w>30||h<5||h>30){sizeError.textContent=t('invalidSize');applySizeLock=false;return}state.size.w=w;state.size.h=h;saveState();closeModal(sizeModal);initGame();setTimeout(()=>{applySizeLock=false},300)});
+            // Нижнее меню
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const tab = item.dataset.tab;
+                    if (tab === 'settings') openModal(settingsModal);
+                    else if (tab === 'profile') openProfileModal();
+                    else if (tab === 'modes') openModal(modesModal);
+                    else if (tab === 'roulette') openModal(rouletteModal);
+                    else if (tab === 'friends') showFriends();
+                    else if (tab === 'game') closeAllModals();
+                });
+            });
             
+            function openProfileModal() {
+                updateProfileUI();
+                const wins = totalWins();
+                const losses = totalLosses();
+                const total = wins + losses;
+                const rate = total > 0 ? Math.round((wins / total) * 100) : 0;
+                profileWins.textContent = wins;
+                profileLosses.textContent = losses;
+                profileWinRate.textContent = rate + '%';
+                renderAchievements();
+                openModal(profileModal);
+            }
+            
+            profileBtn.addEventListener('click', openProfileModal);
+            
+            singlePlayerModeBtn.addEventListener('click', () => {
+                gameMode = 'single';
+                closeModal(modesModal);
+                initGame();
+                showToast('Одиночная игра', 'success');
+            });
+            
+            multiplayerModeBtn.addEventListener('click', () => {
+                pvpClickCount++;
+                if (pvpClickCount >= 5) {
+                    state.pvpClicks = 5;
+                    showToast(t('impatient'), 'success');
+                    checkAchievements();
+                    pvpClickCount = 0;
+                }
+            });
+            
+            document.getElementById('difficultyBtn').addEventListener('click', () => openModal(difficultyModal));
+            document.getElementById('sizeBtn').addEventListener('click', () => {
+                inputWidth.value = state.size.w;
+                inputHeight.value = state.size.h;
+                sizeError.textContent = '';
+                openModal(sizeModal);
+            });
+            document.getElementById('shopBtn').addEventListener('click', () => { renderShop(); openModal(shopModal); });
+            document.getElementById('restartBtn').addEventListener('click', initGame);
+            document.getElementById('applySize').addEventListener('click', () => {
+                if (applySizeLock) return;
+                applySizeLock = true;
+                const w = parseInt(inputWidth.value), h = parseInt(inputHeight.value);
+                if (isNaN(w) || isNaN(h) || w < 5 || w > 30 || h < 5 || h > 30) {
+                    sizeError.textContent = t('invalidSize');
+                    applySizeLock = false;
+                    return;
+                }
+                state.size.w = w; state.size.h = h;
+                saveState(); closeModal(sizeModal); initGame();
+                setTimeout(() => { applySizeLock = false; }, 300);
+            });
+            
+            // Настройки
+            langSelect.value = state.lang;
+            langSelect.addEventListener('change', () => {
+                state.lang = langSelect.value;
+                saveState(); applyLanguage();
+            });
+            
+            soundToggle.checked = state.sound;
+            soundLabel.textContent = state.sound ? t('soundOn') : t('soundOff');
+            soundToggle.addEventListener('change', () => {
+                state.sound = soundToggle.checked;
+                saveState();
+                soundLabel.textContent = state.sound ? t('soundOn') : t('soundOff');
+            });
+            
+            // Промокоды
+            applyPromoBtn.addEventListener('click', () => {
+                const code = promoInput.value.trim();
+                applyPromoCode(code);
+            });
+            
+            function applyPromoCode(code) {
+                if (code === '211224') {
+                    showCheatButton();
+                    showToast(t('promoSuccess'), 'success');
+                } else if (code === '0907' || code === '1010' || code === '2020' || code === '1234' || code === '777' || code === '555' || code === '1402') {
+                    handleSecretCode(code);
+                } else {
+                    showToast(t('promoInvalid'), 'error');
+                }
+            }
+            
+            function handleSecretCode(code) {
+                if (code === '0907') { state.selectedTheme = 'yinyang'; if (!state.ownedThemes.includes('yinyang')) state.ownedThemes.push('yinyang'); saveState(); applyTheme('yinyang'); showToast('Инь-Янь!', 'success'); }
+                else if (code === '1010') { state.selectedTheme = 'matrix'; if (!state.ownedThemes.includes('matrix')) state.ownedThemes.push('matrix'); saveState(); applyTheme('matrix'); showToast('Матрица!', 'success'); }
+                else if (code === '2020') { state.selectedTheme = 'space'; if (!state.ownedThemes.includes('space')) state.ownedThemes.push('space'); saveState(); applyTheme('space'); showToast('Космос!', 'success'); }
+                else if (code === '1234') { state.selectedSkin = 'golden'; if (!state.ownedSkins.includes('golden')) state.ownedSkins.push('golden'); saveState(); showToast('Золотая мина!', 'success'); }
+                else if (code === '777') { showToast('Мины показаны на 5 секунд', 'info'); document.querySelectorAll('.cell').forEach(cellEl => { const r = +cellEl.dataset.r, c = +cellEl.dataset.c; if (board[r] && board[r][c] && board[r][c].mine) cellEl.classList.add('show-mine'); }); setTimeout(() => document.querySelectorAll('.cell.show-mine').forEach(cellEl => cellEl.classList.remove('show-mine')), 5000); }
+                else if (code === '555') { state.balance += 5000; saveState(); updateBalance(); showToast('+5000 монет', 'success'); }
+                else if (code === '1402') { showHeart(); }
+            }
+            
+            function showHeart() {
+                const heartEl = document.createElement('div');
+                heartEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:8rem;z-index:4000;pointer-events:none;transition:transform .3s;';
+                heartEl.textContent = '💖';
+                document.body.appendChild(heartEl);
+                requestAnimationFrame(() => { heartEl.style.transform = 'translate(-50%,-50%) scale(1)'; });
+                setTimeout(() => { heartEl.style.transform = 'translate(-50%,-50%) scale(0)'; setTimeout(() => heartEl.remove(), 300); }, 1500);
+            }
+            
+            versionFooter.addEventListener('click', () => {
+                versionClicks++;
+                if (versionClicks >= 5) { showToast('О, привет!', 'success'); versionClicks = 0; }
+            });
             // ========== МАГАЗИН ==========
-            let currentShopTab='themes';
-            document.querySelectorAll('.shop-tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentShopTab=tab.dataset.tab;renderShop()}));
-            function renderShop(){shopItems.innerHTML='';let items=[];if(currentShopTab==='themes')items=themes;else if(currentShopTab==='skins')items=skins;else if(currentShopTab==='boosters')items=boosters;items.forEach(item=>{const owned=currentShopTab==='themes'?state.ownedThemes.includes(item.id):currentShopTab==='skins'?state.ownedSkins.includes(item.id):(state.boosters[item.id]||0)>0;const selected=currentShopTab==='themes'?state.selectedTheme===item.id:currentShopTab==='skins'?state.selectedSkin===item.id:false;const card=document.createElement('div');card.className='shop-card';const previewStyle=currentShopTab==='themes'?`background:${item.gradient};`:'background:rgba(255,255,255,.15);';const previewContent=currentShopTab==='themes'?'':currentShopTab==='skins'?item.icon:item.icon;let btnText,btnAction,btnDisabled='';let priceDisplay='';if(currentShopTab==='boosters'){if(owned){btnText='Использовать';btnAction='use';priceDisplay=`Куплено: ${state.boosters[item.id]||0}`}else{btnText='Купить';btnAction='buy';priceDisplay=`Цена: 🪙 ${item.price}`}}else{if(selected){btnText='Выбрано';btnAction='none';btnDisabled='disabled'}else if(owned){btnText='Выбрать';btnAction='select';priceDisplay='Куплено'}else{if(item.secret){btnText='Недоступно';btnAction='none';btnDisabled='disabled';priceDisplay='Секретный предмет'}else{btnText='Купить';btnAction='buy';priceDisplay='🪙 '+item.price}}}let boosterQuantity='';if(currentShopTab==='boosters'&&!owned){boosterQuantity=`<div class="qty-selector"><button class="qty-btn minus">-</button><input class="qty-input" type="text" value="1" readonly><button class="qty-btn plus">+</button></div>`}card.innerHTML=`<div class="shop-preview" style="${previewStyle}">${previewContent}</div><div class="shop-name">${item.name[state.lang]}</div><div class="shop-price">${priceDisplay}</div>${boosterQuantity}<button class="shop-btn ${btnDisabled?'unavailable':''}" data-action="${btnAction}" data-id="${item.id}" ${btnDisabled}>${btnText}</button>`;shopItems.appendChild(card)});document.querySelectorAll('.qty-selector').forEach(selector=>{const btnMinus=selector.querySelector('.minus');const btnPlus=selector.querySelector('.plus');const input=selector.querySelector('.qty-input');let qty=1;btnMinus.addEventListener('click',()=>{qty=Math.max(1,qty-1);input.value=qty});btnPlus.addEventListener('click',()=>{qty=Math.min(99,qty+1);input.value=qty});input.addEventListener('change',()=>{let val=parseInt(input.value)||1;val=Math.max(1,Math.min(99,val));input.value=val;qty=val});selector.dataset.qty=qty})}
-            shopItems.addEventListener('click',e=>{const btn=e.target.closest('.shop-btn');if(!btn||btn.disabled)return;const id=btn.dataset.id,action=btn.dataset.action;if(currentShopTab==='themes'){const theme=themes.find(t=>t.id===id);if(!theme)return;if(action==='buy'){if(state.balance>=theme.price){state.balance-=theme.price;if(!state.ownedThemes.includes(id))state.ownedThemes.push(id);state.selectedTheme=id;saveState();updateBalance();applyTheme(id);showToast(t('purchased'),'success');renderShop()}else showToast(t('notEnough'),'error')}else if(action==='select'){state.selectedTheme=id;saveState();applyTheme(id);renderShop()}}else if(currentShopTab==='skins'){const skin=skins.find(s=>s.id===id);if(!skin)return;if(action==='buy'){if(state.balance>=skin.price){state.balance-=skin.price;if(!state.ownedSkins.includes(id))state.ownedSkins.push(id);state.selectedSkin=id;saveState();updateBalance();showToast(t('purchased'),'success');renderShop()}else showToast(t('notEnough'),'error')}else if(action==='select'){state.selectedSkin=id;saveState();renderShop()}}else if(currentShopTab==='boosters'){const booster=boosters.find(b=>b.id===id);if(!booster)return;if(action==='buy'){const card=btn.closest('.shop-card');const qtyInput=card.querySelector('.qty-input');let quantity=qtyInput?parseInt(qtyInput.value)||1:1;const totalPrice=booster.price*quantity;if(state.balance>=totalPrice){state.balance-=totalPrice;state.boosters[id]=(state.boosters[id]||0)+quantity;saveState();updateBalance();updateBoosterUI();showToast(t('purchased'),'success');renderShop()}else showToast(t('notEnough'),'error')}else if(action==='use'){if(id==='safe_cell')safeCell();else if(id==='freeze_time')freezeTime();else if(id==='hint_zone')hintZone();closeModal(shopModal)}}});
+            let currentShopTab = 'themes';
+            document.querySelectorAll('.shop-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentShopTab = tab.dataset.tab;
+                    renderShop();
+                });
+            });
             
-            // ========== КНОПКИ ==========
-            resultBtn.addEventListener('click',()=>{initGame()});
-            cheatBtn.addEventListener('click',()=>{openModal(cheatModal);cheatBtn.style.display='none';keyBuffer=[]});
-            document.getElementById('highlightMinesBtn').addEventListener('click',()=>{highlightMinesActive=!highlightMinesActive;if(highlightMinesActive){updateMinesHighlight();showToast('Подсветка мин включена','success')}else{clearMinesHighlight();showToast('Подсветка мин выключена','info')}});
-            document.getElementById('addCoinsBtn').addEventListener('click',()=>{state.balance+=100000;saveState();updateBalance();showToast('100000 монет добавлено!','success')});
-            document.getElementById('resetGameBtn').addEventListener('click',fullReset);
-            document.getElementById('autoWinBtn').addEventListener('click',autoWin);
-            document.getElementById('boomBtn').addEventListener('click',boomEffect);
-            exitThemeBtn.addEventListener('click',()=>{state.selectedTheme='ocean';saveState();applyTheme(state.selectedTheme);updateExitThemeButton();showToast('Тема сброшена','info')});
-            function updateExitThemeButton(){exitThemeBtn.style.display=state.selectedTheme==='yinyang'?'flex':'none'}
+            function renderShop() {
+                shopItems.innerHTML = '';
+                let items = [];
+                if (currentShopTab === 'themes') items = themes;
+                else if (currentShopTab === 'skins') items = skins;
+                else if (currentShopTab === 'boosters') items = boosters;
+                
+                items.forEach(item => {
+                    const owned = currentShopTab === 'themes' ? state.ownedThemes.includes(item.id) :
+                                  currentShopTab === 'skins' ? state.ownedSkins.includes(item.id) :
+                                  (state.boosters[item.id] || 0) > 0;
+                    const selected = currentShopTab === 'themes' ? state.selectedTheme === item.id :
+                                     currentShopTab === 'skins' ? state.selectedSkin === item.id : false;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'shop-card';
+                    const previewStyle = currentShopTab === 'themes' ? `background:${item.gradient};` : 'background:rgba(255,255,255,.15);';
+                    const previewContent = currentShopTab === 'themes' ? '' : item.icon;
+                    
+                    let btnText, btnAction, btnDisabled = '';
+                    let priceDisplay = '';
+                    
+                    if (currentShopTab === 'boosters') {
+                        if (owned) {
+                            btnText = 'Использовать';
+                            btnAction = 'use';
+                            priceDisplay = `Куплено: ${state.boosters[item.id] || 0}`;
+                        } else {
+                            btnText = 'Купить';
+                            btnAction = 'buy';
+                            priceDisplay = `🪙 ${item.price}`;
+                        }
+                    } else {
+                        if (selected) { btnText = t('selected'); btnAction = 'none'; btnDisabled = 'disabled'; priceDisplay = '✓'; }
+                        else if (owned) { btnText = t('select'); btnAction = 'select'; priceDisplay = t('owned'); }
+                        else { 
+                            if (item.secret) { btnText = '🔒'; btnAction = 'none'; btnDisabled = 'disabled'; priceDisplay = 'Секретный'; }
+                            else { btnText = t('buy'); btnAction = 'buy'; priceDisplay = `🪙 ${item.price}`; }
+                        }
+                    }
+                    
+                    let boosterInfo = '';
+                    if (currentShopTab === 'boosters') {
+                        boosterInfo = `<span class="booster-info-icon" data-desc="${item.desc[state.lang]}">?</span>`;
+                    }
+                    
+                    let boosterQuantity = '';
+                    if (currentShopTab === 'boosters' && !owned) {
+                        boosterQuantity = `
+                            <div class="qty-selector">
+                                <button class="qty-btn minus">-</button>
+                                <input class="qty-input" type="text" value="1" readonly>
+                                <button class="qty-btn plus">+</button>
+                            </div>`;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="shop-preview" style="${previewStyle}">${previewContent}</div>
+                        <div class="shop-name">${item.name[state.lang]} ${boosterInfo}</div>
+                        <div class="shop-price">${priceDisplay}</div>
+                        ${boosterQuantity}
+                        <button class="shop-btn" data-action="${btnAction}" data-id="${item.id}" ${btnDisabled}>${btnText}</button>`;
+                    shopItems.appendChild(card);
+                });
+                
+                document.querySelectorAll('.qty-selector').forEach(selector => {
+                    const btnMinus = selector.querySelector('.minus');
+                    const btnPlus = selector.querySelector('.plus');
+                    const input = selector.querySelector('.qty-input');
+                    let qty = 1;
+                    btnMinus.addEventListener('click', () => { qty = Math.max(1, qty - 1); input.value = qty; });
+                    btnPlus.addEventListener('click', () => { qty = Math.min(99, qty + 1); input.value = qty; });
+                });
+                
+                document.querySelectorAll('.booster-info-icon').forEach(icon => {
+                    icon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showToast(icon.dataset.desc, 'info');
+                    });
+                });
+            }
             
-            // ========== СТАРТОВОЕ МЕНЮ ==========
-            singlePlayerBtn.addEventListener('click',()=>{gameMode='single';applyTheme(state.selectedTheme);pvpIndicator.style.display='none';startMenuModal.classList.remove('active');initGame()});
-            multiplayerBtn.addEventListener('click',()=>{openModal(pvpModal)});
-            pvpOkBtn.addEventListener('click',()=>{closeModal(pvpModal);gameMode='pvp';currentPlayer=1;updatePvpBackground();updatePvpIndicator();startMenuModal.classList.remove('active');initGame()});
-            menuBtn.addEventListener('click',()=>{startMenuModal.classList.add('active')});
-            settingsBtn.addEventListener('click',()=>{openModal(settingsModal)});
-            aboutBtn.addEventListener('click',()=>{openModal(aboutModal)});
-            profileMenuBtn.addEventListener('click',()=>{nicknameInput.value=state.profile.nickname;renderAvatarOptions();openModal(profileModal)});
-            profileBtn.addEventListener('click',()=>{nicknameInput.value=state.profile.nickname;renderAvatarOptions();openModal(profileModal)});
+            shopItems.addEventListener('click', (e) => {
+                const btn = e.target.closest('.shop-btn');
+                if (!btn || btn.disabled) return;
+                const id = btn.dataset.id, action = btn.dataset.action;
+                
+                if (currentShopTab === 'themes') {
+                    const theme = themes.find(t => t.id === id);
+                    if (!theme) return;
+                    if (action === 'buy') {
+                        if (state.balance >= theme.price) {
+                            state.balance -= theme.price;
+                            if (!state.ownedThemes.includes(id)) state.ownedThemes.push(id);
+                            state.selectedTheme = id;
+                            saveState(); updateBalance(); applyTheme(id);
+                            showToast(t('purchased'), 'success');
+                            renderShop();
+                        } else showToast(t('notEnough'), 'error');
+                    } else if (action === 'select') {
+                        state.selectedTheme = id;
+                        saveState(); applyTheme(id);
+                        renderShop();
+                    }
+                } else if (currentShopTab === 'skins') {
+                    const skin = skins.find(s => s.id === id);
+                    if (!skin) return;
+                    if (action === 'buy') {
+                        if (state.balance >= skin.price) {
+                            state.balance -= skin.price;
+                            if (!state.ownedSkins.includes(id)) state.ownedSkins.push(id);
+                            state.selectedSkin = id;
+                            saveState(); updateBalance();
+                            showToast(t('purchased'), 'success');
+                            renderShop();
+                        } else showToast(t('notEnough'), 'error');
+                    } else if (action === 'select') {
+                        state.selectedSkin = id;
+                        saveState(); renderShop();
+                    }
+                } else if (currentShopTab === 'boosters') {
+                    const booster = boosters.find(b => b.id === id);
+                    if (!booster) return;
+                    if (action === 'buy') {
+                        const card = btn.closest('.shop-card');
+                        const qtyInput = card.querySelector('.qty-input');
+                        let quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                        const totalPrice = booster.price * quantity;
+                        if (state.balance >= totalPrice) {
+                            state.balance -= totalPrice;
+                            state.boosters[id] = (state.boosters[id] || 0) + quantity;
+                            saveState(); updateBalance(); updateBoosterUI();
+                            showToast(t('purchased'), 'success');
+                            renderShop();
+                        } else showToast(t('notEnough'), 'error');
+                    } else if (action === 'use') {
+                        if (id === 'safe_cell') safeCell();
+                        else if (id === 'freeze_time') freezeTime();
+                        else if (id === 'hint_zone') hintZone();
+                        closeModal(shopModal);
+                    }
+                }
+            });
+
+            // ========== KONAMI ==========
+            function resetKonami() { konamiBuffer = []; konamiProgress.innerHTML = ''; konamiProgress.classList.remove('error'); }
+            function showKonamiError() {
+                konamiProgress.classList.add('error');
+                setTimeout(() => { resetKonami(); }, 500);
+            }
+            function handleKonamiKey(e) {
+                const key = e.key;
+                if (key.startsWith('Arrow')) {
+                    if (konamiBuffer.length === 0 && key !== 'ArrowUp') return;
+                    if (konamiSequence[konamiBuffer.length] === key) {
+                        konamiBuffer.push(key);
+                        const arrowSymbols = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+                        konamiProgress.innerHTML += arrowSymbols[key];
+                        if (konamiBuffer.length === konamiSequence.length) {
+                            const now = Date.now();
+                            const last = state.lastBonusTimes['konami'] || 0;
+                            if (now - last < 24*60*60*1000) {
+                                const remaining = 24*60*60*1000 - (now - last);
+                                const hours = Math.floor(remaining / (60*60*1000));
+                                showToast(`Konami: ${hours}ч`, 'error');
+                                resetKonami();
+                                return;
+                            }
+                            state.lastBonusTimes['konami'] = now;
+                            state.konamiActivated = true;
+                            state.balance += 1000;
+                            saveState(); updateBalance();
+                            showToast('Konami Code! +1000', 'success');
+                            resetKonami();
+                        }
+                    } else {
+                        showKonamiError();
+                    }
+                } else if (key !== 'Shift' && key !== 'Control' && key !== 'Alt') {
+                    if (konamiBuffer.length > 0) showKonamiError();
+                }
+            }
             
-            // ========== ПРОФИЛЬ ==========
-            const avatars=['😊','😎','🤠','👽','🤖','🐱','🐶','🦊','🐻','🐼','🦁','🐸','🦄','🐙','🦋','🌺'];
-            function renderAvatarOptions(){avatarOptions.innerHTML='';avatars.forEach(av=>{const span=document.createElement('span');span.textContent=av;span.style.fontSize='2rem';span.style.cursor='pointer';span.style.padding='4px';span.style.borderRadius='8px';if(av===state.profile.avatar)span.style.border='2px solid #ffd700';span.addEventListener('click',()=>{state.profile.avatar=av;renderAvatarOptions()});avatarOptions.appendChild(span)})}
-            saveProfileBtn.addEventListener('click',()=>{state.profile.nickname=nicknameInput.value.trim();saveState();updateProfileUI();closeModal(profileModal);showToast('Профиль сохранён','success')});
-            document.getElementById('settingsLangRu').addEventListener('click',()=>{state.lang='ru';saveState();applyLanguage();closeModal(settingsModal)});
-            document.getElementById('settingsLangEn').addEventListener('click',()=>{state.lang='en';saveState();applyLanguage();closeModal(settingsModal)});
-            document.getElementById('settingsSoundToggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;state.sound=soundEnabled;saveState();soundToggle.textContent=soundEnabled?'🔊':'🔇'});
-            
-            // ========== КОДЫ ==========
-            document.addEventListener('keydown',e=>{if(e.key>='0'&&e.key<='9'){keyBuffer.push(e.key);if(keyBuffer.length>6)keyBuffer.shift();const code=keyBuffer.join('');if(code==='211224'){if(cheatBtn.style.display==='none'||cheatBtn.style.display===''){showCheatButton();showToast('Чит-код активирован!','success');keyBuffer=[]}}else if(code==='0907'){if(!state.ownedThemes.includes('yinyang')){state.ownedThemes.push('yinyang');saveState()}state.selectedTheme='yinyang';saveState();applyTheme('yinyang');showToast(t('yinyangUnlocked'),'success');keyBuffer=[]}else if(code==='1010'){if(!state.ownedThemes.includes('matrix')){state.ownedThemes.push('matrix');saveState()}state.selectedTheme='matrix';saveState();applyTheme('matrix');showToast(t('matrixUnlocked'),'success');keyBuffer=[]}else if(code==='2020'){if(!state.ownedThemes.includes('space')){state.ownedThemes.push('space');saveState()}state.selectedTheme='space';saveState();applyTheme('space');showToast(t('spaceUnlocked'),'success');keyBuffer=[]}else if(code==='1234'){if(!state.ownedSkins.includes('golden')){state.ownedSkins.push('golden');saveState()}state.selectedSkin='golden';saveState();showToast(t('goldenUnlocked'),'success');keyBuffer=[]}else if(code==='777'){const now=Date.now();const last=state.lastBonusTimes['777']||0;if(now-last<24*60*60*1000){const remaining=24*60*60*1000-(now-last);const hours=Math.floor(remaining/(60*60*1000));const mins=Math.floor((remaining%(60*60*1000))/(60*1000));showToast(`Код 777 можно использовать через ${hours}ч ${mins}м`,'error');keyBuffer=[];return}state.lastBonusTimes['777']=now;saveState();showToast('Мины показаны на 5 секунд','info');document.querySelectorAll('.cell').forEach(cellEl=>{const r=+cellEl.dataset.r,c=+cellEl.dataset.c;if(board[r]&&board[r][c]&&board[r][c].mine)cellEl.classList.add('show-mine')});setTimeout(()=>document.querySelectorAll('.cell.show-mine').forEach(cellEl=>cellEl.classList.remove('show-mine')),5000);keyBuffer=[]}else if(code==='555'){const now=Date.now();const last=state.lastBonusTimes['555']||0;if(now-last<24*60*60*1000){const remaining=24*60*60*1000-(now-last);const hours=Math.floor(remaining/(60*60*1000));const mins=Math.floor((remaining%(60*60*1000))/(60*1000));showToast(`Код 555 можно использовать через ${hours}ч ${mins}м`,'error');keyBuffer=[];return}state.lastBonusTimes['555']=now;state.balance+=5000;saveState();updateBalance();showToast('+5000 монет','success');keyBuffer=[]}else if(code==='1402'){showHeart();keyBuffer=[]}}else{keyBuffer=[]}handleKonamiKey(e)});
-            
-            function showHeart(){const heartEl=document.createElement('div');heartEl.style.cssText=`position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:8rem;z-index:4000;pointer-events:none;transition:transform .3s ease;`;heartEl.textContent='💖';document.body.appendChild(heartEl);requestAnimationFrame(()=>{heartEl.style.transform='translate(-50%,-50%) scale(1)'});setTimeout(()=>{heartEl.style.transform='translate(-50%,-50%) scale(0)';setTimeout(()=>heartEl.remove(),300)},1500)}
-            versionFooter.addEventListener('click',()=>{versionClicks++;if(versionClicks>=5){showToast('О, привет!','success');versionClicks=0}});
-            
+            document.addEventListener('keydown', (e) => {
+                if (e.key >= '0' && e.key <= '9') {
+                    keyBuffer.push(e.key);
+                    if (keyBuffer.length > 6) keyBuffer.shift();
+                    const code = keyBuffer.join('');
+                    if (code === '211224') {
+                        showCheatButton();
+                        showToast('Чит активирован!', 'success');
+                        keyBuffer = [];
+                    } else if (code === '0907' || code === '1010' || code === '2020' || code === '1234' || code === '777' || code === '555' || code === '1402') {
+                        handleSecretCode(code);
+                        keyBuffer = [];
+                    }
+                } else {
+                    keyBuffer = [];
+                }
+                handleKonamiKey(e);
+            });
+
+            // ========== ПОДСКАЗКИ ==========
+            function showRandomHint() {
+                const list = hints[state.lang];
+                if (list && list.length) {
+                    hintEl.textContent = list[Math.floor(Math.random() * list.length)];
+                }
+            }
+            function startHintRotation() {
+                if (hintInterval) clearInterval(hintInterval);
+                showRandomHint();
+                hintInterval = setInterval(showRandomHint, 35000);
+            }
+
             // ========== ЯЗЫК ==========
-            function applyLanguage(){document.documentElement.lang=state.lang;document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(translations[state.lang][key])el.textContent=translations[state.lang][key]});document.getElementById('langToggle').textContent=state.lang==='ru'?'EN':'RU';updateMineCounter();updateTimer();updateBalance();updateLevel();updateBoosterUI();updateProfileUI();showRandomHint()}
-            function showRandomHint(){const list=hints[state.lang];if(list&&list.length){hintEl.textContent=list[Math.floor(Math.random()*list.length)]}}
-            function startHintRotation(){if(hintInterval)clearInterval(hintInterval);showRandomHint();hintInterval=setInterval(showRandomHint,12000)}
-            
+            function applyLanguage() {
+                document.documentElement.lang = state.lang;
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.dataset.i18n;
+                    if (translations[state.lang][key]) el.textContent = translations[state.lang][key];
+                });
+                langSelect.value = state.lang;
+                updateMineCounter(); updateTimer(); updateBalance(); updateLevel();
+                updateBoosterUI(); updateProfileUI();
+                showRandomHint();
+                soundLabel.textContent = state.sound ? t('soundOn') : t('soundOff');
+            }
+
+            // ========== ЗАКРЫТИЕ МОДАЛОК ==========
+            document.querySelectorAll('[data-close]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.closest('.modal-overlay').classList.remove('active');
+                });
+            });
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+            });
+
+            // ========== КНОПКИ РЕЗУЛЬТАТА ==========
+            resultBtn.addEventListener('click', () => { closeModal(resultModal); initGame(); });
+
+            // ========== ЧИТ КНОПКИ ==========
+            cheatBtn.addEventListener('click', () => { openModal(cheatModal); });
+            document.getElementById('highlightMinesBtn').addEventListener('click', () => {
+                highlightMinesActive = !highlightMinesActive;
+                if (highlightMinesActive) { updateMinesHighlight(); showToast('Подсветка вкл', 'success'); }
+                else { clearMinesHighlight(); showToast('Подсветка выкл', 'info'); }
+            });
+            document.getElementById('addCoinsBtn').addEventListener('click', () => {
+                state.balance += 100000; saveState(); updateBalance();
+                showToast('+100000 монет', 'success');
+            });
+            document.getElementById('resetGameBtn').addEventListener('click', fullReset);
+            document.getElementById('autoWinBtn').addEventListener('click', autoWin);
+            document.getElementById('boomBtn').addEventListener('click', boomEffect);
+
+            // ========== ДРУЗЬЯ ==========
+            sendFriendRequestBtn.addEventListener('click', () => {
+                const friendId = parseInt(friendIdInput.value);
+                if (friendId) sendFriendRequest(friendId);
+            });
+
+            // ========== ВЫХОД ИЗ ТЕМЫ ==========
+            exitThemeBtn.addEventListener('click', () => {
+                state.selectedTheme = 'ocean';
+                saveState(); applyTheme(state.selectedTheme);
+                showToast('Тема сброшена', 'info');
+            });
+            function updateExitThemeButton() {
+                exitThemeBtn.style.display = state.selectedTheme === 'yinyang' ? 'flex' : 'none';
+            }
+
             // ========== ИНИЦИАЛИЗАЦИЯ ==========
-            function init(){applyTheme(state.selectedTheme);applyLanguage();initGame();startHintRotation();updateExitThemeButton();updateProfileUI();updateBoosterUI();if(state.sound)soundToggle.textContent='🔊';else soundToggle.textContent='🔇';try{if(localStorage.getItem('insik_current_game'))continueBtn.style.display='inline-block'}catch(e){}startMenuModal.classList.add('active');pvpIndicator.style.display='none'}
-            window.addEventListener('resize',setCellSize);
+            function init() {
+                applyTheme(state.selectedTheme);
+                applyLanguage();
+                initGame();
+                startHintRotation();
+                updateExitThemeButton();
+                updateProfileUI();
+                updateBoosterUI();
+                soundToggle.checked = state.sound;
+                try { if (localStorage.getItem('insik_current_game')) continueBtn.style.display = 'inline-block'; } catch (e) {}
+                getOrCreateUserProfile();
+            }
+            
+            window.addEventListener('resize', setCellSize);
             init();
         })();
     </script>
