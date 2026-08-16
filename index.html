@@ -512,7 +512,6 @@
             let username = telegramUser ? telegramUser.username : 'username';
             let avatarUrl = telegramUser?.photo_url || null;
 
-            // Если initDataUnsafe пуст, пробуем парсить initData
             if (!telegramId && tg?.initData) {
                 try {
                     const params = new URLSearchParams(tg.initData);
@@ -528,7 +527,6 @@
                 } catch (e) {}
             }
 
-            // Если всё равно нет ID — заглушка для браузера
             if (!telegramId) telegramId = 12345;
             
             // ========== РОЛИ ПОЛЬЗОВАТЕЛЕЙ ==========
@@ -834,8 +832,6 @@
             let currentPlayer = 1;
             let pvpClickCount = 0;
             let leaderboardInterval = null;
-            let leaderboardCache = null;
-            let leaderboardCacheTime = 0;
             const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
             const boosterIcons = document.querySelectorAll('.booster-icon');
             // ========== ФУНКЦИИ ==========
@@ -850,30 +846,22 @@
             function updateProfileUI() {
                 const roleLabel = getRoleLabel(telegramId);
                 
-                // Маленькая аватарка в шапке
                 if (avatarUrl) {
                     profileAvatar.innerHTML = `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" alt="avatar">`;
                 } else {
                     profileAvatar.textContent = state.profile.avatar;
                 }
                 
-                // Имя с ролью в шапке
                 profileName.innerHTML = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
                 
-                // Большая аватарка в профиле
                 if (avatarUrl) {
                     profileAvatarBig.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="avatar">`;
                 } else {
                     profileAvatarBig.textContent = state.profile.avatar;
                 }
                 
-                // Имя с ролью в профиле
                 profileNameBig.innerHTML = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
-                
-                // Юзернейм с ролью
                 profileUsername.innerHTML = '@' + (username || 'username') + (roleLabel ? ' ' + roleLabel : '');
-                
-                // Уровень
                 profileLevel.textContent = state.level;
             }
             function applyTheme(themeId) {
@@ -1301,8 +1289,9 @@
             }
 
             async function showLeaderboard() {
-                leaderboardCache = null;
-                leaderboardCacheTime = 0;
+                closeAllModals();
+                openModal(leaderboardModal);
+                leaderboardContainer.innerHTML = '<p style="text-align:center;opacity:.7;">Загрузка...</p>';
                 
                 const leaders = await getLeaderboard();
                 let html = '';
@@ -1333,7 +1322,6 @@
                     html += '</div>';
                 }
                 leaderboardContainer.innerHTML = html;
-                openModal(leaderboardModal);
             }
 
             async function sendFriendRequest(toTelegramId) {
@@ -1390,6 +1378,8 @@
             }
 
             async function showFriends() {
+                closeAllModals();
+                
                 if (myTelegramIdEl) {
                     myTelegramIdEl.textContent = telegramId;
                     myTelegramIdEl.style.cursor = 'pointer';
@@ -1587,12 +1577,10 @@
                 toggleFlag(+cellEl.dataset.r, +cellEl.dataset.c);
             });
             
-            // Предотвращение выделения текста
             boardEl.addEventListener('selectstart', (e) => {
                 e.preventDefault();
             });
             
-            // Долгое нажатие для флажков
             let longPressTimer = null, longPressTriggered = false;
             boardEl.addEventListener('touchstart', (e) => {
                 const cellEl = e.target.closest('.cell');
@@ -1627,13 +1615,17 @@
                     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
                     const tab = item.dataset.tab;
-                    if (tab === 'settings') openModal(settingsModal);
-                    else if (tab === 'profile') openProfileModal();
-                    else if (tab === 'modes') openModal(modesModal);
-                    else if (tab === 'roulette') openModal(rouletteModal);
-                    else if (tab === 'friends') showFriends();
-                    else if (tab === 'leaderboard') showLeaderboard();
-                    else if (tab === 'game') closeAllModals();
+                    
+                    closeAllModals();
+                    
+                    setTimeout(() => {
+                        if (tab === 'settings') openModal(settingsModal);
+                        else if (tab === 'profile') openProfileModal();
+                        else if (tab === 'modes') openModal(modesModal);
+                        else if (tab === 'roulette') openModal(rouletteModal);
+                        else if (tab === 'friends') showFriends();
+                        else if (tab === 'leaderboard') showLeaderboard();
+                    }, 50);
                 });
             });
             
@@ -2003,19 +1995,32 @@
             resultBtn.addEventListener('click', () => { closeModal(resultModal); initGame(); });
 
             // ========== ЧИТ КНОПКИ ==========
-            cheatBtn.addEventListener('click', () => { openModal(cheatModal); });
+            cheatBtn.addEventListener('click', () => { 
+                closeAllModals();
+                openModal(cheatModal); 
+            });
             document.getElementById('highlightMinesBtn').addEventListener('click', () => {
                 highlightMinesActive = !highlightMinesActive;
-                if (highlightMinesActive) { updateMinesHighlight(); showToast('Подсветка вкл', 'success'); }
-                else { clearMinesHighlight(); showToast('Подсветка выкл', 'info'); }
+                if (highlightMinesActive) { updateMinesHighlight(); showToast('Подсветка вкл', 'success'); closeModal(cheatModal); }
+                else { clearMinesHighlight(); showToast('Подсветка выкл', 'info'); closeModal(cheatModal); }
             });
             document.getElementById('addCoinsBtn').addEventListener('click', () => {
                 state.balance += 100000; saveState(); updateBalance();
                 showToast('+100000 монет', 'success');
+                closeModal(cheatModal);
             });
-            document.getElementById('resetGameBtn').addEventListener('click', fullReset);
-            document.getElementById('autoWinBtn').addEventListener('click', autoWin);
-            document.getElementById('boomBtn').addEventListener('click', boomEffect);
+            document.getElementById('resetGameBtn').addEventListener('click', () => {
+                fullReset();
+                closeModal(cheatModal);
+            });
+            document.getElementById('autoWinBtn').addEventListener('click', () => {
+                autoWin();
+                closeModal(cheatModal);
+            });
+            document.getElementById('boomBtn').addEventListener('click', () => {
+                closeModal(cheatModal);
+                boomEffect();
+            });
 
             // ========== ДРУЗЬЯ ==========
             sendFriendRequestBtn.addEventListener('click', () => {
@@ -2053,8 +2058,6 @@
                 // Обновление топ-10 каждые 24 часа, если окно открыто
                 leaderboardInterval = setInterval(() => {
                     if (leaderboardModal.classList.contains('active')) {
-                        leaderboardCache = null;
-                        leaderboardCacheTime = 0;
                         showLeaderboard();
                     }
                 }, 86400000); // 24 часа
