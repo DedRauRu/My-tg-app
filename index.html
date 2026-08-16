@@ -114,6 +114,8 @@
         .achievement-name{font-weight:600;font-size:.95rem}
         .achievement-progress{font-size:.8rem;opacity:.7}
         .dev-badge{display:inline-block;padding:4px 10px;background:rgba(255,165,0,.3);border:1px solid #ffa500;border-radius:12px;font-size:.7rem;font-weight:700;color:#ffa500;margin-left:8px;vertical-align:middle}
+        .role-badge-owner{display:inline-block;padding:2px 8px;border:1px solid #ffd700;border-radius:12px;font-size:.65rem;font-weight:700;color:#ffd700;background:rgba(255,215,0,.15);margin-left:6px;vertical-align:middle;letter-spacing:.3px}
+        .role-badge-moderator{display:inline-block;padding:2px 8px;border:1px solid #ff5252;border-radius:12px;font-size:.65rem;font-weight:700;color:#ff5252;background:rgba(255,82,82,.15);margin-left:6px;vertical-align:middle;letter-spacing:.3px}
         .booster-info-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);cursor:pointer;font-size:.8rem;color:#fff;margin-left:6px;transition:all .2s}
         .booster-info-icon:hover{background:rgba(255,255,255,.4)}
         .profile-avatar-big img{width:100%;height:100%;border-radius:50%;object-fit:cover}
@@ -198,7 +200,7 @@
         </div>
     </main>
     
-    <footer id="versionFooter">Версия 1.1.0</footer>
+    <footer id="versionFooter">Версия V1.1.0</footer>
     
     <!-- НИЖНЕЕ МЕНЮ -->
     <div class="bottom-nav">
@@ -427,7 +429,7 @@
                 <button class="close-btn" data-close>&times;</button>
             </div>
             <div id="leaderboardContainer"></div>
-            <p style="margin-top:10px;font-size:.8rem;opacity:.6;" data-i18n="leaderboardUpdate">Обновляется раз в 5 минут</p>
+            <p style="margin-top:10px;font-size:.8rem;opacity:.6;" data-i18n="leaderboardUpdate">Обновляется раз в 24 часа</p>
         </div>
     </div>
     
@@ -529,6 +531,30 @@
             // Если всё равно нет ID — заглушка для браузера
             if (!telegramId) telegramId = 12345;
             
+            // ========== РОЛИ ПОЛЬЗОВАТЕЛЕЙ ==========
+            const roles = {
+                '1784758404': { role: 'owner', label: { ru: 'Владелец', en: 'Owner' } },
+                '1367339066': { role: 'moderator', label: { ru: 'Модератор', en: 'Moderator' } }
+            };
+
+            function getUserRole(telegramId) {
+                const userRole = roles[String(telegramId)];
+                if (userRole) {
+                    return userRole;
+                }
+                return null;
+            }
+
+            function getRoleLabel(telegramId) {
+                const role = getUserRole(telegramId);
+                if (role) {
+                    const label = role.label[state.lang] || role.label.ru;
+                    const badgeClass = role.role === 'owner' ? 'role-badge-owner' : 'role-badge-moderator';
+                    return `<span class="${badgeClass}">${label}</span>`;
+                }
+                return '';
+            }
+            
             // ========== ТЕМЫ ==========
             const themes=[
                 {id:'ocean',name:{ru:'Океанский закат',en:'Ocean Twilight'},price:0,gradient:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)'},
@@ -582,7 +608,7 @@
                     settings:'Настройки',about:'О разработчике',profile:'Профиль',
                     singlePlayer:'Одиночная игра',multiplayer:'Друг против друга',inDev:'В разработке',
                     modes:'Режимы',game:'Игра',language:'Язык / Language',sound:'Звук / Sound',soundOn:'Вкл',soundOff:'Выкл',
-                    promocode:'Промокод',leaderboard:'Топ-10 игроков',leaderboardUpdate:'Обновляется раз в 5 минут',
+                    promocode:'Промокод',leaderboard:'Топ-10 игроков',leaderboardUpdate:'Обновляется раз в 24 часа',
                     friends:'Друзья',addFriend:'Добавить',wins:'Побед',losses:'Поражений',winRate:'Коэффициент побед',
                     achievements:'Достижения',noStats:'Нет данных',menu:'Меню',
                     singlePlayerDesc:'Классический сапёр',noFriends:'Нет друзей',
@@ -609,7 +635,7 @@
                     settings:'Settings',about:'About developer',profile:'Profile',
                     singlePlayer:'Single Player',multiplayer:'Player vs Player',inDev:'In development',
                     modes:'Modes',game:'Game',language:'Language',sound:'Sound',soundOn:'On',soundOff:'Off',
-                    promocode:'Promo code',leaderboard:'Top 10 players',leaderboardUpdate:'Updates every 5 minutes',
+                    promocode:'Promo code',leaderboard:'Top 10 players',leaderboardUpdate:'Updates every 24 hours',
                     friends:'Friends',addFriend:'Add',wins:'Wins',losses:'Losses',winRate:'Win rate',
                     achievements:'Achievements',noStats:'No data',menu:'Menu',
                     singlePlayerDesc:'Classic minesweeper',noFriends:'No friends',
@@ -812,6 +838,8 @@
             let currentPlayer = 1;
             let pvpClickCount = 0;
             let leaderboardInterval = null;
+            let leaderboardCache = null;
+            let leaderboardCacheTime = 0;
             const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
             const boosterIcons = document.querySelectorAll('.booster-icon');
             // ========== ФУНКЦИИ ==========
@@ -830,7 +858,8 @@
                 } else {
                     profileAvatar.textContent = state.profile.avatar;
                 }
-                profileName.textContent = state.profile.nickname || firstName;
+                const roleLabel = getRoleLabel(telegramId);
+                profileName.textContent = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
                 // Большая аватарка в профиле
                 if (avatarUrl) {
                     profileAvatarBig.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="avatar">`;
@@ -1222,39 +1251,25 @@
                 try {
                     const statsRef = db.collection('game_stats').doc(String(telegramId));
                     
-                    // Гарантированная запись с merge
-                    await statsRef.set({
+                    // Используем инкремент для атомарного обновления
+                    const updates = {
+                        wins: firebase.firestore.FieldValue.increment(won ? 1 : 0),
+                        losses: firebase.firestore.FieldValue.increment(won ? 0 : 1),
+                        totalGames: firebase.firestore.FieldValue.increment(1),
+                        totalTimePlayed: firebase.firestore.FieldValue.increment(timeTaken),
                         telegramId: telegramId,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                    };
                     
+                    await statsRef.set(updates, { merge: true });
+                    
+                    // Обновляем bestTime
                     const doc = await statsRef.get();
-                    if (!doc.exists) {
-                        await statsRef.set({ 
-                            wins: won ? 1 : 0, 
-                            losses: won ? 0 : 1, 
-                            totalGames: 1, 
-                            bestTime: timeTaken, 
-                            totalTimePlayed: timeTaken,
-                            telegramId: telegramId,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    } else {
-                        const data = doc.data();
-                        const wins = (data.wins || 0) + (won ? 1 : 0);
-                        const losses = (data.losses || 0) + (won ? 0 : 1);
-                        const totalGames = (data.totalGames || 0) + 1;
-                        const bestTime = Math.min(data.bestTime || timeTaken, timeTaken);
-                        const totalTimePlayed = (data.totalTimePlayed || 0) + timeTaken;
-                        
-                        await statsRef.update({
-                            wins: wins,
-                            losses: losses,
-                            totalGames: totalGames,
-                            bestTime: bestTime,
-                            totalTimePlayed: totalTimePlayed,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                    if (doc.exists) {
+                        const currentBest = doc.data().bestTime || 999999;
+                        if (timeTaken < currentBest) {
+                            await statsRef.update({ bestTime: timeTaken });
+                        }
                     }
                     
                     console.log('Статистика записана в Firebase:', { telegramId, won, timeTaken });
@@ -1265,22 +1280,34 @@
 
             async function getLeaderboard() {
                 if (!db) return [];
+                
+                // Кэширование на 1 минуту
+                const now = Date.now();
+                if (leaderboardCache && (now - leaderboardCacheTime < 60000)) {
+                    return leaderboardCache;
+                }
+                
                 try {
                     const snapshot = await db.collection('game_stats').orderBy('wins', 'desc').limit(10).get();
                     const leaders = [];
                     snapshot.forEach(doc => leaders.push({ telegramId: doc.id, ...doc.data() }));
+                    leaderboardCache = leaders;
+                    leaderboardCacheTime = now;
                     return leaders;
-                } catch (e) { console.log('Leaderboard error:', e); return []; }
+                } catch (e) { return leaderboardCache || []; }
             }
 
             async function showLeaderboard() {
+                // Сбрасываем кэш при открытии
+                leaderboardCache = null;
+                leaderboardCacheTime = 0;
+                
                 const leaders = await getLeaderboard();
                 let html = '';
                 
                 if (leaders.length === 0) {
-                    // Если нет статистики — показываем текущего пользователя на 1 месте
                     html = '<div style="display:flex;flex-direction:column;gap:8px;">';
-                    html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}</span><span class="stat-value">0 ${t('wins')}</span></div>`;
+                    html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}</span><span class="stat-value">${totalWins()} ${t('wins')}</span></div>`;
                     for (let i = 1; i < 10; i++) {
                         html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
                     }
@@ -1292,8 +1319,10 @@
                             const player = leaders[i];
                             const userDoc = await db.collection('users').doc(player.telegramId).get();
                             const name = userDoc.exists ? userDoc.data().firstName : 'Игрок';
+                            const playerRole = getRoleLabel(player.telegramId);
+                            const roleBadge = playerRole ? ' ' + playerRole : '';
                             const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                            html += `<div class="stat-row"><span>${medal} ${name}</span><span class="stat-value">${player.wins} ${t('wins')}</span></div>`;
+                            html += `<div class="stat-row"><span>${medal} ${name}${roleBadge}</span><span class="stat-value">${player.wins || 0} ${t('wins')}</span></div>`;
                         } else {
                             html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
                         }
@@ -1314,14 +1343,12 @@
                 try {
                     const requestId = `${Math.min(telegramId, toTelegramId)}_${Math.max(telegramId, toTelegramId)}`;
                     
-                    // Проверяем, существует ли уже запрос
                     const existingReq = await db.collection('friendRequests').doc(requestId).get();
                     if (existingReq.exists) {
                         showToast('Запрос уже отправлен', 'error');
                         return;
                     }
                     
-                    // Создаём запрос
                     await db.collection('friendRequests').doc(requestId).set({
                         from: telegramId, 
                         to: toTelegramId, 
@@ -1332,14 +1359,6 @@
                     console.log('Запрос создан:', requestId);
                     showToast(t('requestSent') || 'Запрос отправлен', 'success');
                     if (friendIdInput) friendIdInput.value = '';
-                    
-                    // Проверяем, что запрос действительно записался
-                    const checkReq = await db.collection('friendRequests').doc(requestId).get();
-                    if (checkReq.exists) {
-                        console.log('Запрос подтверждён в Firebase');
-                    } else {
-                        console.log('ОШИБКА: запрос не записался в Firebase');
-                    }
                 } catch (e) {
                     console.log('Friend request error:', e);
                     showToast('Ошибка: ' + e.message, 'error');
@@ -1350,12 +1369,20 @@
                 if (!telegramId || !db) return [];
                 try {
                     const friendsSnapshot = await db.collection('users').doc(String(telegramId)).collection('friends').get();
+                    const friendIds = friendsSnapshot.docs.map(doc => doc.data().friendId);
+                    
+                    // Загружаем все профили параллельно
+                    const promises = friendIds.map(friendId => 
+                        db.collection('users').doc(String(friendId)).get()
+                    );
+                    const results = await Promise.all(promises);
+                    
                     const friends = [];
-                    for (const doc of friendsSnapshot.docs) {
-                        const friendId = doc.data().friendId;
-                        const friendProfile = await db.collection('users').doc(String(friendId)).get();
-                        if (friendProfile.exists) friends.push({ id: friendId, ...friendProfile.data() });
-                    }
+                    results.forEach((doc, index) => {
+                        if (doc.exists) {
+                            friends.push({ id: friendIds[index], ...doc.data() });
+                        }
+                    });
                     return friends;
                 } catch (e) { return []; }
             }
@@ -1385,13 +1412,41 @@
                     html = `<p style="text-align:center;opacity:.7;">${t('noFriends')}</p>`;
                 } else {
                     friends.forEach(f => {
-                        html += `<div class="stat-row"><span>${f.firstName || 'Игрок'}</span><span class="stat-value">ID: ${f.id}</span></div>`;
+                        const friendRole = getRoleLabel(f.id);
+                        const roleDisplay = friendRole ? ' ' + friendRole : '';
+                        html += `
+                            <div class="stat-row">
+                                <span>${f.firstName || 'Игрок'}${roleDisplay}</span>
+                                <span class="stat-value">
+                                    <button class="btn" style="padding:4px 8px;font-size:.7rem;margin-right:5px;" onclick="viewFriendProfile('${f.id}')">👤</button>
+                                    <button class="btn" style="padding:4px 8px;font-size:.7rem;background:rgba(244,67,54,.3);" onclick="removeFriend('${f.id}')">🗑️</button>
+                                </span>
+                            </div>`;
                     });
                 }
                 friendsList.innerHTML = html;
                 await showIncomingRequests();
                 openModal(friendsModal);
             }
+
+            window.viewFriendProfile = async function(friendId) {
+                try {
+                    const userDoc = await db.collection('users').doc(String(friendId)).get();
+                    if (userDoc.exists) {
+                        const user = userDoc.data();
+                        showToast(`${user.firstName || 'Игрок'} @${user.username || 'username'}`, 'info');
+                    }
+                } catch (e) {}
+            };
+
+            window.removeFriend = async function(friendId) {
+                try {
+                    await db.collection('users').doc(String(telegramId)).collection('friends').doc(String(friendId)).delete();
+                    await db.collection('users').doc(String(friendId)).collection('friends').doc(String(telegramId)).delete();
+                    showToast('Друг удалён', 'success');
+                    showFriends();
+                } catch (e) { console.log(e); }
+            };
 
             async function showIncomingRequests() {
                 if (!db || !telegramId) { incomingRequests.innerHTML = ''; return; }
@@ -1495,6 +1550,40 @@
                 if (!cellEl || gameOver) return;
                 toggleFlag(+cellEl.dataset.r, +cellEl.dataset.c);
             });
+            
+            // Предотвращение контекстного меню на iOS
+            boardEl.addEventListener('selectstart', (e) => {
+                e.preventDefault();
+            });
+            
+            // Долгое нажатие для флажков
+            let longPressTimer = null, longPressTriggered = false;
+            boardEl.addEventListener('touchstart', (e) => {
+                const cellEl = e.target.closest('.cell');
+                if (!cellEl) return;
+                longPressTriggered = false;
+                longPressTimer = setTimeout(() => {
+                    const r = +cellEl.dataset.r;
+                    const c = +cellEl.dataset.c;
+                    toggleFlag(r, c);
+                    longPressTriggered = true;
+                    if (navigator.vibrate) navigator.vibrate(50);
+                }, 400);
+            }, { passive: true });
+
+            boardEl.addEventListener('touchend', (e) => {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                if (longPressTriggered) {
+                    e.preventDefault();
+                    longPressTriggered = false;
+                }
+            }, { passive: false });
+
+            boardEl.addEventListener('touchmove', () => {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }, { passive: true });
             
             // Нижнее меню
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -1925,12 +2014,14 @@
                 try { if (localStorage.getItem('insik_current_game')) continueBtn.style.display = 'inline-block'; } catch (e) {}
                 getOrCreateUserProfile();
                 
-                // Обновление топ-10 каждые 5 минут, если окно открыто
+                // Обновление топ-10 каждые 24 часа, если окно открыто
                 leaderboardInterval = setInterval(() => {
                     if (leaderboardModal.classList.contains('active')) {
+                        leaderboardCache = null;
+                        leaderboardCacheTime = 0;
                         showLeaderboard();
                     }
-                }, 300000); // 5 минут
+                }, 86400000); // 24 часа
             }
             
             window.addEventListener('resize', setCellSize);
