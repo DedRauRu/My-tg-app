@@ -139,7 +139,7 @@
     </style>
 </head>
 <body>
-    <div id="leavesContainer" class="leaves-container" style="display:none;"></div>
+<div id="leavesContainer" class="leaves-container" style="display:none;"></div>
     
     <!-- ШАПКА -->
     <header class="glass">
@@ -225,6 +225,10 @@
         <div class="nav-item" data-tab="friends">
             <span class="nav-icon">👥</span>
             <span data-i18n="friends">Друзья</span>
+        </div>
+        <div class="nav-item" data-tab="leaderboard">
+            <span class="nav-icon">🏆</span>
+            <span data-i18n="leaderboard">Топ-10</span>
         </div>
     </div>
     
@@ -499,12 +503,31 @@
         (function() {
             // ========== ДАННЫЕ TELEGRAM ==========
             const tg = window.Telegram?.WebApp;
-            const telegramUser = tg?.initDataUnsafe?.user || null;
-            const telegramId = telegramUser ? telegramUser.id : 12345;
-            const firstName = telegramUser ? telegramUser.first_name : 'Гость';
-            const lastName = telegramUser ? telegramUser.last_name : '';
-            const username = telegramUser ? telegramUser.username : 'username';
-            const avatarUrl = telegramUser?.photo_url || null;
+            let telegramUser = tg?.initDataUnsafe?.user || null;
+            let telegramId = telegramUser ? telegramUser.id : null;
+            let firstName = telegramUser ? telegramUser.first_name : 'Гость';
+            let lastName = telegramUser ? telegramUser.last_name : '';
+            let username = telegramUser ? telegramUser.username : 'username';
+            let avatarUrl = telegramUser?.photo_url || null;
+
+            // Если initDataUnsafe пуст, пробуем парсить initData
+            if (!telegramId && tg?.initData) {
+                try {
+                    const params = new URLSearchParams(tg.initData);
+                    const userParam = params.get('user');
+                    if (userParam) {
+                        const user = JSON.parse(decodeURIComponent(userParam));
+                        telegramId = user.id;
+                        firstName = user.first_name;
+                        lastName = user.last_name || '';
+                        username = user.username || 'username';
+                        avatarUrl = user.photo_url || null;
+                    }
+                } catch (e) {}
+            }
+
+            // Если всё равно нет ID — заглушка для браузера
+            if (!telegramId) telegramId = 12345;
             
             // ========== ТЕМЫ ==========
             const themes=[
@@ -602,7 +625,7 @@
                 ru:["Используйте правую кнопку мыши для флажков","Числа показывают количество мин рядом","Начните с углов — там безопаснее","Если рядом с цифрой уже стоит нужное количество флажков, остальные клетки безопасны","Долгое нажатие на мобильном ставит флажок","Вы можете выбрать тему и скин мины в Магазине","За победу вы получаете монеты","Бустеры помогут в сложных ситуациях","Проверяйте таблицу лидеров","Добавляйте друзей по Telegram ID","Промокоды дают бонусы","Секретные коды открывают темы","Играйте каждый день для достижений","Лучшее время сохраняется в статистике","Попробуйте режим PvP","Сложность 5★ даёт больше наград"],
                 en:["Use right click for flags","Numbers show nearby mines","Start from corners — safer there","If number already has that many flags, remaining cells are safe","Long press on mobile places flag","You can choose theme and mine skin in Shop","You earn coins for winning","Boosters help in tough situations","Check the leaderboard","Add friends by Telegram ID","Promo codes give bonuses","Secret codes unlock themes","Play daily for achievements","Best time is saved in statistics","Try PvP mode","5★ difficulty gives more rewards"]
             };
-            // ========== ДОСТИЖЕНИЯ ==========
+// ========== ДОСТИЖЕНИЯ ==========
             const achievementsList = [
                 {id:'first_win',name:{ru:'Первая победа',en:'First Win'},desc:{ru:'Выиграть первую игру',en:'Win first game'},icon:'🏆',check:()=>totalWins()>=1},
                 {id:'five_wins',name:{ru:'Пять побед',en:'Five Wins'},desc:{ru:'Выиграть 5 игр',en:'Win 5 games'},icon:'🎖️',check:()=>totalWins()>=5},
@@ -788,7 +811,7 @@
             let pvpClickCount = 0;
             const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
             const boosterIcons = document.querySelectorAll('.booster-icon');
-            // ========== ФУНКЦИИ ==========
+// ========== ФУНКЦИИ ==========
             function t(key) { return translations[state.lang][key] || key; }
             function updateBalance() { balanceAmountEl.textContent = state.balance; }
             function updateLevel() { levelDisplayEl.textContent = state.level; xpDisplayEl.textContent = state.xp + ' XP'; }
@@ -798,15 +821,22 @@
                 document.querySelector('#booster-hint .booster-count').textContent = state.boosters.hint_zone || 0;
             }
             function updateProfileUI() {
-                profileAvatar.textContent = state.profile.avatar;
+                // Маленькая аватарка в шапке
+                if (avatarUrl) {
+                    profileAvatar.innerHTML = `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" alt="avatar">`;
+                } else {
+                    profileAvatar.textContent = state.profile.avatar;
+                }
                 profileName.textContent = state.profile.nickname || firstName;
-                profileAvatarBig.textContent = avatarUrl ? '' : state.profile.avatar;
+                // Большая аватарка в профиле
+                if (avatarUrl) {
+                    profileAvatarBig.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="avatar">`;
+                } else {
+                    profileAvatarBig.textContent = state.profile.avatar;
+                }
                 profileNameBig.textContent = state.profile.nickname || firstName;
                 profileUsername.textContent = '@' + (username || 'username');
                 profileLevel.textContent = state.level;
-                if (avatarUrl && profileAvatarBig) {
-                    profileAvatarBig.innerHTML = `<img src="${avatarUrl}" alt="avatar">`;
-                }
             }
             function applyTheme(themeId) {
                 const theme = themes.find(th => th.id === themeId);
@@ -1161,9 +1191,10 @@
                 boardEl.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
                 boardEl.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
             }
-            // ========== FIREBASE ФУНКЦИИ ==========
+// ========== FIREBASE ФУНКЦИИ ==========
             async function getOrCreateUserProfile() {
-                if (!telegramId || !db) return;
+                if (!telegramId) { console.log('Нет telegramId'); return; }
+                if (!db) { console.log('Нет db'); return; }
                 try {
                     const userRef = db.collection('users').doc(String(telegramId));
                     const doc = await userRef.get();
@@ -1174,6 +1205,7 @@
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        console.log('Профиль создан в Firebase');
                     } else {
                         await userRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
                     }
@@ -1181,7 +1213,8 @@
             }
 
             async function updateGameStats(won, timeTaken) {
-                if (!telegramId || !db) return;
+                if (!telegramId) { console.log('updateGameStats: нет telegramId'); return; }
+                if (!db) { console.log('updateGameStats: нет db'); return; }
                 try {
                     const statsRef = db.collection('game_stats').doc(String(telegramId));
                     const doc = await statsRef.get();
@@ -1197,15 +1230,18 @@
                             totalTimePlayed: data.totalTimePlayed + timeTaken
                         });
                     }
+                    console.log('Статистика отправлена в Firebase:', { won, timeTaken, telegramId });
                 } catch (e) { console.log('Firebase stats error:', e); }
             }
 
             async function getLeaderboard() {
                 if (!db) return [];
-                const snapshot = await db.collection('game_stats').orderBy('wins', 'desc').limit(10).get();
-                const leaders = [];
-                snapshot.forEach(doc => leaders.push({ telegramId: doc.id, ...doc.data() }));
-                return leaders;
+                try {
+                    const snapshot = await db.collection('game_stats').orderBy('wins', 'desc').limit(10).get();
+                    const leaders = [];
+                    snapshot.forEach(doc => leaders.push({ telegramId: doc.id, ...doc.data() }));
+                    return leaders;
+                } catch (e) { console.log('Leaderboard error:', e); return []; }
             }
 
             async function showLeaderboard() {
@@ -1233,8 +1269,9 @@
             }
 
             async function sendFriendRequest(toTelegramId) {
-                if (!telegramId || !db) return;
+                if (!telegramId) { showToast('Telegram ID не определён', 'error'); return; }
                 if (telegramId === toTelegramId) { showToast('Нельзя добавить самого себя', 'error'); return; }
+                if (!db) { showToast('Нет соединения с базой данных', 'error'); return; }
                 try {
                     const requestId = `${Math.min(telegramId, toTelegramId)}_${Math.max(telegramId, toTelegramId)}`;
                     await db.collection('friendRequests').doc(requestId).set({
@@ -1242,7 +1279,11 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     showToast('Запрос отправлен', 'success');
-                } catch (e) { console.log('Friend request error:', e); }
+                    if (friendIdInput) friendIdInput.value = '';
+                } catch (e) {
+                    console.log('Friend request error:', e);
+                    showToast('Ошибка отправки запроса', 'error');
+                }
             }
 
             async function getFriends() {
@@ -1389,6 +1430,7 @@
                     else if (tab === 'modes') openModal(modesModal);
                     else if (tab === 'roulette') openModal(rouletteModal);
                     else if (tab === 'friends') showFriends();
+                    else if (tab === 'leaderboard') showLeaderboard();
                     else if (tab === 'game') closeAllModals();
                 });
             });
@@ -1503,7 +1545,7 @@
                 versionClicks++;
                 if (versionClicks >= 5) { showToast('О, привет!', 'success'); versionClicks = 0; }
             });
-            // ========== МАГАЗИН ==========
+// ========== МАГАЗИН ==========
             let currentShopTab = 'themes';
             document.querySelectorAll('.shop-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -1776,7 +1818,11 @@
             // ========== ДРУЗЬЯ ==========
             sendFriendRequestBtn.addEventListener('click', () => {
                 const friendId = parseInt(friendIdInput.value);
-                if (friendId) sendFriendRequest(friendId);
+                if (!friendId) {
+                    showToast('Введите ID друга', 'error');
+                    return;
+                }
+                sendFriendRequest(friendId);
             });
 
             // ========== ВЫХОД ИЗ ТЕМЫ ==========
@@ -1809,3 +1855,4 @@
     </script>
 </body>
 </html>
+
