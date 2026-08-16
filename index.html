@@ -29,8 +29,8 @@
         .game-info{display:flex;gap:20px;padding:12px 24px;font-weight:700;font-size:1.1rem;align-items:center}
         .info-item{display:flex;align-items:center;gap:8px}
         .board-wrapper{padding:12px;display:flex;justify-content:center;align-items:center;max-width:95vw;position:relative}
-        .board{display:grid;gap:2px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-        .cell{width:var(--cell-size);height:var(--cell-size);display:flex;align-items:center;justify-content:center;background:var(--cell-bg);border:1px solid var(--cell-border);border-radius:6px;cursor:pointer;font-weight:800;font-size:calc(var(--cell-size)*.5);color:#fff;transition:background .15s ease,transform .1s ease,box-shadow .2s ease;animation:fadeIn .25s ease}
+        .board{display:grid;gap:2px;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
+        .cell{width:var(--cell-size);height:var(--cell-size);display:flex;align-items:center;justify-content:center;background:var(--cell-bg);border:1px solid var(--cell-border);border-radius:6px;cursor:pointer;font-weight:800;font-size:calc(var(--cell-size)*.5);color:#fff;transition:background .15s ease,transform .1s ease,box-shadow .2s ease;animation:fadeIn .25s ease;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
         .cell:hover{background:var(--cell-hover);transform:scale(1.04);box-shadow:0 0 12px rgba(255,255,255,.2)}
         .cell.revealed{background:var(--cell-open);cursor:default;animation:openPop .25s ease}
         .cell.revealed:hover{background:var(--cell-open);transform:none;box-shadow:none}
@@ -538,17 +538,13 @@
             };
 
             function getUserRole(telegramId) {
-                const userRole = roles[String(telegramId)];
-                if (userRole) {
-                    return userRole;
-                }
-                return null;
+                return roles[String(telegramId)] || null;
             }
 
             function getRoleLabel(telegramId) {
                 const role = getUserRole(telegramId);
                 if (role) {
-                    const label = role.label[state.lang] || role.label.ru;
+                    const label = role.label[state?.lang] || role.label.ru;
                     const badgeClass = role.role === 'owner' ? 'role-badge-owner' : 'role-badge-moderator';
                     return `<span class="${badgeClass}">${label}</span>`;
                 }
@@ -852,22 +848,32 @@
                 document.querySelector('#booster-hint .booster-count').textContent = state.boosters.hint_zone || 0;
             }
             function updateProfileUI() {
+                const roleLabel = getRoleLabel(telegramId);
+                
                 // Маленькая аватарка в шапке
                 if (avatarUrl) {
                     profileAvatar.innerHTML = `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" alt="avatar">`;
                 } else {
                     profileAvatar.textContent = state.profile.avatar;
                 }
-                const roleLabel = getRoleLabel(telegramId);
-                profileName.textContent = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
+                
+                // Имя с ролью в шапке
+                profileName.innerHTML = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
+                
                 // Большая аватарка в профиле
                 if (avatarUrl) {
                     profileAvatarBig.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="avatar">`;
                 } else {
                     profileAvatarBig.textContent = state.profile.avatar;
                 }
-                profileNameBig.textContent = state.profile.nickname || firstName;
-                profileUsername.textContent = '@' + (username || 'username');
+                
+                // Имя с ролью в профиле
+                profileNameBig.innerHTML = (state.profile.nickname || firstName) + (roleLabel ? ' ' + roleLabel : '');
+                
+                // Юзернейм с ролью
+                profileUsername.innerHTML = '@' + (username || 'username') + (roleLabel ? ' ' + roleLabel : '');
+                
+                // Уровень
                 profileLevel.textContent = state.level;
             }
             function applyTheme(themeId) {
@@ -1251,7 +1257,6 @@
                 try {
                     const statsRef = db.collection('game_stats').doc(String(telegramId));
                     
-                    // Используем инкремент для атомарного обновления
                     const updates = {
                         wins: firebase.firestore.FieldValue.increment(won ? 1 : 0),
                         losses: firebase.firestore.FieldValue.increment(won ? 0 : 1),
@@ -1263,7 +1268,6 @@
                     
                     await statsRef.set(updates, { merge: true });
                     
-                    // Обновляем bestTime
                     const doc = await statsRef.get();
                     if (doc.exists) {
                         const currentBest = doc.data().bestTime || 999999;
@@ -1281,7 +1285,6 @@
             async function getLeaderboard() {
                 if (!db) return [];
                 
-                // Кэширование на 1 минуту
                 const now = Date.now();
                 if (leaderboardCache && (now - leaderboardCacheTime < 60000)) {
                     return leaderboardCache;
@@ -1298,7 +1301,6 @@
             }
 
             async function showLeaderboard() {
-                // Сбрасываем кэш при открытии
                 leaderboardCache = null;
                 leaderboardCacheTime = 0;
                 
@@ -1307,7 +1309,8 @@
                 
                 if (leaders.length === 0) {
                     html = '<div style="display:flex;flex-direction:column;gap:8px;">';
-                    html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}</span><span class="stat-value">${totalWins()} ${t('wins')}</span></div>`;
+                    const myRole = getRoleLabel(telegramId);
+                    html += `<div class="stat-row"><span>🥇 ${firstName || 'Вы'}${myRole ? ' ' + myRole : ''}</span><span class="stat-value">${totalWins()} ${t('wins')}</span></div>`;
                     for (let i = 1; i < 10; i++) {
                         html += `<div class="stat-row"><span>${i + 1}.</span><span style="opacity:.5;">${t('noOpponents')}</span></div>`;
                     }
@@ -1371,7 +1374,6 @@
                     const friendsSnapshot = await db.collection('users').doc(String(telegramId)).collection('friends').get();
                     const friendIds = friendsSnapshot.docs.map(doc => doc.data().friendId);
                     
-                    // Загружаем все профили параллельно
                     const promises = friendIds.map(friendId => 
                         db.collection('users').doc(String(friendId)).get()
                     );
@@ -1392,17 +1394,7 @@
                     myTelegramIdEl.textContent = telegramId;
                     myTelegramIdEl.style.cursor = 'pointer';
                     myTelegramIdEl.onclick = () => {
-                        navigator.clipboard.writeText(String(telegramId)).then(() => {
-                            showToast(t('idCopied') || 'ID скопирован!', 'success');
-                        }).catch(() => {
-                            const textArea = document.createElement('textarea');
-                            textArea.value = String(telegramId);
-                            document.body.appendChild(textArea);
-                            textArea.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(textArea);
-                            showToast(t('idCopied') || 'ID скопирован!', 'success');
-                        });
+                        copyToClipboard(String(telegramId));
                     };
                 }
                 
@@ -1415,12 +1407,12 @@
                         const friendRole = getRoleLabel(f.id);
                         const roleDisplay = friendRole ? ' ' + friendRole : '';
                         html += `
-                            <div class="stat-row">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:8px;">
                                 <span>${f.firstName || 'Игрок'}${roleDisplay}</span>
-                                <span class="stat-value">
-                                    <button class="btn" style="padding:4px 8px;font-size:.7rem;margin-right:5px;" onclick="viewFriendProfile('${f.id}')">👤</button>
-                                    <button class="btn" style="padding:4px 8px;font-size:.7rem;background:rgba(244,67,54,.3);" onclick="removeFriend('${f.id}')">🗑️</button>
-                                </span>
+                                <div style="display:flex;gap:5px;">
+                                    <button class="btn" style="padding:5px 10px;font-size:.7rem;" onclick="viewFriendProfile('${f.id}')">👤</button>
+                                    <button class="btn" style="padding:5px 10px;font-size:.7rem;background:rgba(244,67,54,.3);" onclick="removeFriend('${f.id}')">🗑️</button>
+                                </div>
                             </div>`;
                     });
                 }
@@ -1429,23 +1421,66 @@
                 openModal(friendsModal);
             }
 
+            function copyToClipboard(text) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast(t('idCopied') || 'ID скопирован!', 'success');
+                    }).catch(() => {
+                        showToast('Ошибка копирования', 'error');
+                    });
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast(t('idCopied') || 'ID скопирован!', 'success');
+                }
+            }
+
             window.viewFriendProfile = async function(friendId) {
                 try {
                     const userDoc = await db.collection('users').doc(String(friendId)).get();
                     if (userDoc.exists) {
                         const user = userDoc.data();
-                        showToast(`${user.firstName || 'Игрок'} @${user.username || 'username'}`, 'info');
+                        const role = getRoleLabel(friendId);
+                        
+                        profileAvatarBig.textContent = '👤';
+                        profileNameBig.innerHTML = (user.firstName || 'Игрок') + (role ? ' ' + role : '');
+                        profileUsername.textContent = '@' + (user.username || 'username');
+                        profileLevel.textContent = '-';
+                        
+                        const statsDoc = await db.collection('game_stats').doc(String(friendId)).get();
+                        if (statsDoc.exists) {
+                            const stats = statsDoc.data();
+                            profileWins.textContent = stats.wins || 0;
+                            profileLosses.textContent = stats.losses || 0;
+                            const total = (stats.wins || 0) + (stats.losses || 0);
+                            const rate = total > 0 ? Math.round((stats.wins / total) * 100) : 0;
+                            profileWinRate.textContent = rate + '%';
+                        } else {
+                            profileWins.textContent = 0;
+                            profileLosses.textContent = 0;
+                            profileWinRate.textContent = '0%';
+                        }
+                        
+                        achievementsListEl.innerHTML = '<p style="text-align:center;opacity:.5;">Достижения скрыты</p>';
+                        
+                        openModal(profileModal);
                     }
-                } catch (e) {}
+                } catch (e) { console.log(e); }
             };
 
             window.removeFriend = async function(friendId) {
-                try {
-                    await db.collection('users').doc(String(telegramId)).collection('friends').doc(String(friendId)).delete();
-                    await db.collection('users').doc(String(friendId)).collection('friends').doc(String(telegramId)).delete();
-                    showToast('Друг удалён', 'success');
-                    showFriends();
-                } catch (e) { console.log(e); }
+                if (confirm('Удалить друга?')) {
+                    try {
+                        await db.collection('users').doc(String(telegramId)).collection('friends').doc(String(friendId)).delete();
+                        await db.collection('users').doc(String(friendId)).collection('friends').doc(String(telegramId)).delete();
+                        showToast('Друг удалён', 'success');
+                        showFriends();
+                    } catch (e) { console.log(e); }
+                }
             };
 
             async function showIncomingRequests() {
@@ -1460,9 +1495,10 @@
                         html = '<h3 style="margin-bottom:10px;">' + t('incomingRequests') + ':</h3>';
                         snapshot.forEach(doc => {
                             const req = doc.data();
+                            const senderRole = getRoleLabel(req.from);
                             html += `
                                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:8px;">
-                                    <span>ID: ${req.from}</span>
+                                    <span>ID: ${req.from}${senderRole ? ' ' + senderRole : ''}</span>
                                     <div style="display:flex;gap:8px;">
                                         <button class="btn" style="padding:6px 12px;font-size:.8rem;background:rgba(76,175,80,.3);" onclick="acceptFriend('${doc.id}', ${req.from}, ${req.to})">✅</button>
                                         <button class="btn" style="padding:6px 12px;font-size:.8rem;background:rgba(244,67,54,.3);" onclick="declineFriend('${doc.id}')">❌</button>
@@ -1551,7 +1587,7 @@
                 toggleFlag(+cellEl.dataset.r, +cellEl.dataset.c);
             });
             
-            // Предотвращение контекстного меню на iOS
+            // Предотвращение выделения текста
             boardEl.addEventListener('selectstart', (e) => {
                 e.preventDefault();
             });
